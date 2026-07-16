@@ -1,24 +1,36 @@
 # Blind Beat
 
-Blind Beat is a multiplayer music game where players create instrument patterns without hearing the other players' contributions. At the end of a match, the system combines the patterns into song variants and players vote for the best result.
+Blind Beat, oyuncuların diğer oyuncuların katkılarını duymadan müzik patternleri oluşturduğu çok oyunculu bir müzik oyunudur. Sistem, oyuncuların katkılarını birleştirerek farklı şarkı varyantları üretir ve oyuncular bu şarkıları anonim olarak oylayarak puanlar.
 
-## Current Status
+## Oyun Özeti
 
-- Game rules and core flow are being designed.
-- The local audio prototype is available under `test/index.html`.
-- Backend and frontend implementation have not started yet.
+- Lobbyler 4 ile 10 oyuncu arasında kurulabilir.
+- Oyuncular seçilen her enstrüman için 30 saniyelik bir instrument round oynar.
+- Her oyuncu 8 step üzerinden kendi patternini oluşturur.
+- Sistem pattern pool içinden üç farklı şarkı varyantı üretir.
+- Şarkılar oyuncu katkıları gösterilmeden dinletilir ve blind voting yapılır.
+- Match sonunda puanlar leaderboarda yansır.
+- Final beraberliklerinde archive patternleriyle OG Round oynanır.
 
-## Documentation
+## Teknik Özet
 
-- [Game rules and current design](docs/gamerules.md)
-- [Technical architecture](docs/technical.md)
+- Vue.js ve Vite ile ayrı frontend
+- Node.js ve Express ile backend
+- Canlı oyun akışı için native WebSocket
+- Kalıcı veriler için PostgreSQL ve Prisma
+- Frontend, backend ve PostgreSQL için Docker Compose
+- Pattern verileri JSONB formatında saklanır.
+- REST API kalıcı kaynakları, WebSocket ise canlı oyun olaylarını yönetir.
+- Oyun stateinin ve kritik kararların otoritesi serverdadır.
 
-The evolving private game-design notes in `game.md` are intentionally excluded from Git.
+## Mevcut Durum
 
-## Planned Stack
+Oyun kuralları ve teknik mimari tasarım aşamasında netleştirilmiştir. Sentez sesleri için çalışan bir prototip `test/index.html` içinde bulunmaktadır. Uygulama geliştirmesine Docker, PostgreSQL, Prisma ve temel backend bağlantısıyla başlanacaktır.
 
-- Vue.js and Vite
-- Node.js and Express.js
-- Native WebSocket
-- PostgreSQL
-- Docker
+## Dokümantasyon
+
+- [Oyun kuralları ve güncel tasarım](docs/gamerules.md)
+- [Teknik mimari](docs/technical.md)
+
+
+
