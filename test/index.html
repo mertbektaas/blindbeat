@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blind Beat Sound Lab</title>
+    <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #10131a;
+            --panel: #191e29;
+            --panel-2: #202736;
+            --line: #30394b;
+            --text: #eef3fb;
+            --muted: #9aa7ba;
+            --accent: #65d2b0;
+            --accent-2: #8bb8ff;
+            --warm: #ffb86b;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-width: 1100px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
+
+        main { max-width: 1440px; margin: 0 auto; padding: 28px; }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 22px;
+        }
+
+        h1, h2, p { margin: 0; }
+        h1 { font-size: 26px; letter-spacing: 0; }
+        h2 { font-size: 16px; font-weight: 700; }
+        .subtitle { color: var(--muted); margin-top: 5px; font-size: 13px; }
+
+        .toolbar, .panel {
+            border: 1px solid var(--line);
+            background: var(--panel);
+            border-radius: 8px;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        button, input { font: inherit; }
+
+        button {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--text);
+            background: var(--panel-2);
+            padding: 8px 11px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s, transform .15s;
+        }
+
+        button:hover { border-color: var(--accent-2); }
+        button:active { transform: translateY(1px); }
+        button.primary { color: #0d1715; background: var(--accent); border-color: var(--accent); font-weight: 700; }
+        button.active { color: #081513; background: var(--accent); border-color: var(--accent); }
+        button.playing { outline: 2px solid var(--warm); outline-offset: 1px; }
+
+        .field { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
+        input[type="number"] { width: 72px; padding: 8px; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+        .status { min-width: 130px; color: var(--muted); font-size: 13px; }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .panel { padding: 15px; min-width: 0; }
+        .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .panel-head span { color: var(--muted); font-size: 12px; }
+
+        .step-row {
+            display: grid;
+            grid-template-columns: 78px repeat(8, minmax(30px, 1fr));
+            gap: 5px;
+            align-items: center;
+            margin-bottom: 7px;
+        }
+
+        .step-label { color: var(--muted); font-size: 12px; }
+        .step-button { width: 100%; aspect-ratio: 1; padding: 0; font-size: 12px; }
+        .step-button.current { box-shadow: inset 0 -3px 0 var(--warm); }
+
+        .note-panel { grid-column: span 3; }
+        .note-grid {
+            display: grid;
+            grid-template-columns: 78px repeat(8, minmax(92px, 1fr));
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .note-cell { padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: #171c26; }
+        .note-cell.current { border-color: var(--warm); }
+        .note-cell strong { display: block; color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+        .note-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .note-options button { padding: 5px 2px; font-size: 11px; }
+        .note-options button.selected { color: #081513; background: var(--accent-2); border-color: var(--accent-2); }
+        .note-options button.empty { color: var(--muted); }
+
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 15px; }
+        .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; background: var(--accent); }
+        .legend span:nth-child(2)::before { background: var(--accent-2); }
+        .legend span:nth-child(3)::before { background: var(--warm); }
+
+        @media (max-width: 1200px) {
+            body { min-width: 900px; }
+            main { padding: 18px; }
+            .grid-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .note-panel { grid-column: span 2; }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <div>
+                <h1>Blind Beat Sound Lab</h1>
+                <p class="subtitle">8-step sentez ses prototipi</p>
+            </div>
+            <div class="toolbar">
+                <button id="startAudio" class="primary">Start Audio</button>
+                <button id="playAll">Play</button>
+                <button id="stopAll">Stop</button>
+                <button id="clearAll">Clear</button>
+                <label class="field">BPM <input id="bpm" type="number" min="60" max="180" value="120"></label>
+                <span id="status" class="status">Audio kapali</span>
+            </div>
+        </header>
+
+        <section class="grid-layout">
+            <article class="panel">
+                <div class="panel-head"><h2>Kick / Drum</h2><span>step</span></div>
+                <div class="step-row" data-drum="kick"><span class="step-label">Kick</span></div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head"><h2>Snare / Percussion</h2><span>step</span></div>
+                <div class="step-row" data-drum="snare"><span class="step-label">Snare</span></div>
+            </article>
+
+            <article class="panel">
+                <div class="panel-head"><h2>Hi-hat</h2><span>step</span></div>
+                <div class="step-row" data-drum="hat"><span class="step-label">Hat</span></div>
+            </article>
+
+            <article class="panel note-panel">
+                <div class="panel-head"><h2>Bass</h2><span>tek nota / step</span></div>
+                <div class="note-grid" data-notes="bass"></div>
+            </article>
+
+            <article class="panel note-panel">
+                <div class="panel-head"><h2>Lead Synth</h2><span>tek nota / step</span></div>
+                <div class="note-grid" data-notes="lead"></div>
+            </article>
+
+            <article class="panel note-panel">
+                <div class="panel-head"><h2>Chord Synth</h2><span>akor / step</span></div>
+                <div class="note-grid" data-notes="chord"></div>
+            </article>
+        </section>
+
+        <div class="legend">
+            <span>aktif step</span>
+            <span>nota secimi</span>
+            <span>playback step'i</span>
+        </div>
+    </main>
+
+    <script>
+        const STEPS = 8;
+        const drumPattern = { kick: Array(STEPS).fill(false), snare: Array(STEPS).fill(false), hat: Array(STEPS).fill(false) };
+        const noteOptions = {
+            bass: [null, "C2", "D2", "G2", "A2"],
+            lead: [null, "C4", "D4", "E4", "G4", "A4"],
+            chord: [null, "C3-E3-G3", "G2-B2-D3", "A2-C3-E3", "F2-A2-C3"]
+        };
+        const notePattern = {
+            bass: Array(STEPS).fill(null),
+            lead: Array(STEPS).fill(null),
+            chord: Array(STEPS).fill(null)
+        };
+
+        let audioReady = false;
+        let scheduledLoop = null;
+        let currentStep = -1;
+        let playbackStep = 0;
+
+        const synths = {
+            kick: new Tone.MembraneSynth({ pitchDecay: 0.03, octaves: 5, oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.28, sustain: 0, release: 0.05 } }).toDestination(),
+            snare: new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.12, sustain: 0 } }).toDestination(),
+            hat: new Tone.MetalSynth({ frequency: 280, envelope: { attack: 0.001, decay: 0.08, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 3500, octaves: 1.5 }).toDestination(),
+            bass: new Tone.MonoSynth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.12, sustain: 0.3, release: 0.2 }, filterEnvelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.2, baseFrequency: 80, octaves: 3 } }).toDestination(),
+            lead: new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.35, release: 0.25 } }).toDestination(),
+            chord: new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.45, release: 0.5 } }).toDestination()
+        };
+
+        function makeButton(text, className, onClick) {
+            const button = document.createElement("button");
+            button.textContent = text;
+            button.className = className;
+            button.addEventListener("click", onClick);
+            return button;
+        }
+
+        document.querySelectorAll("[data-drum]").forEach(row => {
+            const instrument = row.dataset.drum;
+            for (let step = 0; step < STEPS; step++) {
+                const button = makeButton(String(step + 1), "step-button", () => {
+                    drumPattern[instrument][step] = !drumPattern[instrument][step];
+                    button.classList.toggle("active", drumPattern[instrument][step]);
+                    triggerSingle(instrument);
+                });
+                button.dataset.step = step;
+                row.appendChild(button);
+            }
+        });
+
+        document.querySelectorAll("[data-notes]").forEach(grid => {
+            const instrument = grid.dataset.notes;
+            const label = document.createElement("div");
+            label.className = "step-label";
+            label.textContent = instrument === "chord" ? "Chord" : "Note";
+            grid.appendChild(label);
+
+            for (let step = 0; step < STEPS; step++) {
+                const cell = document.createElement("div");
+                cell.className = "note-cell";
+                cell.dataset.step = step;
+                const title = document.createElement("strong");
+                title.textContent = `Step ${step + 1}`;
+                cell.appendChild(title);
+
+                const options = document.createElement("div");
+                options.className = "note-options";
+                noteOptions[instrument].forEach(note => {
+                    const text = note === null ? "-" : note.includes("-") ? note.split("-")[0] : note;
+                    const button = makeButton(text, note === null ? "empty" : "", () => {
+                        notePattern[instrument][step] = note;
+                        [...options.children].forEach(child => child.classList.remove("selected"));
+                        button.classList.add("selected");
+                        if (note !== null) triggerSingle(instrument, note);
+                    });
+                    button.title = note || "Sessiz";
+                    options.appendChild(button);
+                });
+                cell.appendChild(options);
+                grid.appendChild(cell);
+            }
+        });
+
+        async function ensureAudio() {
+            if (!audioReady) {
+                await Tone.start();
+                audioReady = true;
+                document.querySelector("#status").textContent = "Audio hazir";
+            }
+        }
+
+        function triggerSingle(instrument, note = null) {
+            if (!audioReady) return;
+            const now = Tone.now();
+            if (instrument === "kick") synths.kick.triggerAttackRelease("C1", "8n", now);
+            if (instrument === "snare") synths.snare.triggerAttackRelease("16n", now);
+            if (instrument === "hat") synths.hat.triggerAttackRelease("32n", now);
+            if (instrument === "bass" && note) synths.bass.triggerAttackRelease(note, "8n", now);
+            if (instrument === "lead" && note) synths.lead.triggerAttackRelease(note, "8n", now);
+            if (instrument === "chord" && note) synths.chord.triggerAttackRelease(note.split("-"), "2n", now);
+        }
+
+        function triggerAtStep(step, time) {
+            if (drumPattern.kick[step]) synths.kick.triggerAttackRelease("C1", "8n", time);
+            if (drumPattern.snare[step]) synths.snare.triggerAttackRelease("16n", time);
+            if (drumPattern.hat[step]) synths.hat.triggerAttackRelease("32n", time);
+            if (notePattern.bass[step]) synths.bass.triggerAttackRelease(notePattern.bass[step], "8n", time);
+            if (notePattern.lead[step]) synths.lead.triggerAttackRelease(notePattern.lead[step], "8n", time);
+            if (notePattern.chord[step]) synths.chord.triggerAttackRelease(notePattern.chord[step].split("-"), "2n", time);
+            Tone.Draw.schedule(() => markCurrentStep(step), time);
+        }
+
+        function markCurrentStep(step) {
+            currentStep = step;
+            document.querySelectorAll("[data-step]").forEach(element => {
+                element.classList.toggle("current", Number(element.dataset.step) === step);
+            });
+        }
+
+        function clearCurrentStep() {
+            document.querySelectorAll("[data-step]").forEach(element => element.classList.remove("current"));
+            currentStep = -1;
+        }
+
+        async function playAll() {
+            await ensureAudio();
+            stopAll();
+            Tone.Transport.bpm.value = Number(document.querySelector("#bpm").value) || 120;
+            playbackStep = 0;
+            scheduledLoop = Tone.Transport.scheduleRepeat((time) => {
+                triggerAtStep(playbackStep, time);
+                playbackStep = (playbackStep + 1) % STEPS;
+            }, "8n");
+            Tone.Transport.start();
+            document.querySelector("#status").textContent = "Calıyor";
+        }
+
+        function stopAll() {
+            if (scheduledLoop !== null) {
+                Tone.Transport.clear(scheduledLoop);
+                scheduledLoop = null;
+            }
+            Tone.Transport.stop();
+            Tone.Transport.position = 0;
+            playbackStep = 0;
+            clearCurrentStep();
+            document.querySelector("#status").textContent = audioReady ? "Audio hazir" : "Audio kapali";
+        }
+
+        function clearAll() {
+            Object.values(drumPattern).forEach(pattern => pattern.fill(false));
+            Object.values(notePattern).forEach(pattern => pattern.fill(null));
+            document.querySelectorAll(".active, .selected").forEach(element => element.classList.remove("active", "selected"));
+            stopAll();
+        }
+
+        document.querySelector("#startAudio").addEventListener("click", ensureAudio);
+        document.querySelector("#playAll").addEventListener("click", playAll);
+        document.querySelector("#stopAll").addEventListener("click", stopAll);
+        document.querySelector("#clearAll").addEventListener("click", clearAll);
+        document.querySelector("#bpm").addEventListener("change", () => {
+            if (audioReady) Tone.Transport.bpm.value = Number(document.querySelector("#bpm").value) || 120;
+        });
+    </script>
+</body>
+</html>

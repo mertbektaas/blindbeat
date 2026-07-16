@@ -1,0 +1,24 @@
+# Local design notes
+game.md
+
+# Operating system files
+.DS_Store
+
+# Dependencies
+node_modules/
+
+# Local databases and runtime files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+
