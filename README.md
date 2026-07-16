@@ -10,7 +10,7 @@ Blind Beat is a multiplayer music game where players create instrument patterns 
 
 ## Documentation
 
-- [Game rules and current design](gamerules.md)
+- [Game rules and current design](docs/gamerules.md)
 - [Technical architecture](docs/technical.md)
 
 The evolving private game-design notes in `game.md` are intentionally excluded from Git.

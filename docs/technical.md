@@ -1,79 +1,76 @@
-# Blind Beat - Teknik Tasarim
+# Blind Beat Teknik Tasarım
 
-> Bu dosya, oyun kurallari netlestikten sonra alinmis teknik mimari kararlarini tutar.
+Bu belge, oyun kuralları netleştirildikten sonra alınan teknik mimari kararlarını içerir. Uygulama geliştirilirken teknik bir karar değişirse bu belge güncellenmelidir.
 
 ## 1. Genel Mimari
 
-Frontend ve backend ayri uygulamalar olacak.
+Frontend ve backend ayrı uygulamalar olarak geliştirilecektir.
 
-
-Vue + Vite frontend
+Vue ve Vite frontend
         |
-REST API + Native WebSocket
+REST API ve Native WebSocket
         |
-Node.js + Express backend
+Node.js ve Express backend
         |
 PostgreSQL
 
+Frontend, backend ve PostgreSQL Docker Compose içinde ayrı servisler olarak çalışacaktır.
 
-Frontend ve backend Docker Compose icinde ayri servisler olarak calisacak. PostgreSQL de ayri bir servis olacak.
+## 2. Gerçek Zamanlı İletişim
 
-## 2. Gercek Zamanli Iletisim
+Gerçek zamanlı oyun akışı için native WebSocket kullanılacaktır.
 
-Native WebSocket protokolu kullanilacak.
+- Tarayıcı tarafında native WebSocket API kullanılacak.
+- Node.js tarafında WebSocket sunucusu için bir sunucu kütüphanesi kullanılacak.
+- REST API tek seferlik ve kalıcı işlemleri yönetecek.
+- WebSocket oyun sırasındaki anlık olayları yönetecek.
 
-- Browser tarafinda native `WebSocket` API
-- Node.js backend tarafinda WebSocket server kutuphanesi
-- REST API tek seferlik ve kalici islemler icin kullanilacak.
-- WebSocket oyun sirasindaki anlik olaylar icin kullanilacak.
+### REST API sorumlulukları
 
-### REST sorumluluklari
-
-- Lobby olusturma
-- Lobby'ye katilma
-- Lobby ayarlarini alma
-- Kalici pattern ve match verilerini alma
+- Lobby oluşturma
+- Lobbyye katılma
+- Lobby ayarlarını alma
+- Kalıcı pattern ve match verilerini alma
 - Session ve leaderboard verilerini alma
 
-### WebSocket sorumluluklari
+### WebSocket sorumlulukları
 
-- Oyuncu giris/cikis olaylari
-- Instrument round baslangici
-- Reconnect ve timer olaylari
+- Oyuncu giriş ve çıkış olayları
+- Instrument round başlangıcı
+- Reconnect ve timer olayları
 - Pattern kilitleme bildirimi
-- Playback baslangici
-- Oylama baslangici ve bitisi
-- Leaderboard guncellemesi
+- Playback başlangıcı
+- Oylama başlangıcı ve bitişi
+- Leaderboard güncellemesi
 
-### Native WebSocket yazilacak minimum altyapi
+### Gerekli WebSocket altyapısı
 
-- Lobby/room registry
-- Connection-to-player eslestirmesi
+- Lobby ve room registry
+- Bağlantı ile oyuncu eşleştirmesi
 - Event router
-- Mesaj formati ve validation
+- Mesaj formatı ve doğrulama
 - Room broadcast
-- Heartbeat/ping-pong
-- Reconnect state'i
-- Mesaj sirasi ve tekrar gelen mesaj kontrolu
-- Kontrollu hata mesaji
+- Heartbeat ve ping-pong
+- Reconnect durumu
+- Mesaj sırası ve tekrar gelen mesaj kontrolü
+- Kontrollü hata mesajları
 
-## 3. Native WebSocket Gerekcesi
+## 3. Native WebSocket Seçiminin Nedeni
 
-10 kisilik lobby ve kucuk JSON mesajlari icin Socket.IO ile native WebSocket arasinda kullanici deneyimini etkileyecek bir performans farki beklenmiyor. Her iki secenek de bu trafik icin fazlasiyla yeterli.
+On kişilik lobby ve küçük JSON mesajları için Socket.IO ile native WebSocket arasında kullanıcı deneyimini değiştirecek bir performans farkı beklenmemektedir. Her iki seçenek de bu trafik için yeterlidir.
 
-Native WebSocket secildi cunku:
+Native WebSocket seçilmesinin nedenleri:
 
-- Protokol ve mesaj akisi daha dogrudan gorulecek.
-- Room, reconnect ve broadcast davranislari proje ekibi tarafindan kontrol edilecek.
-- Gereksiz abstraction ve fallback davranislari olmayacak.
-- Hoca tarafindan istenen moduler ve minimal yapiya daha uygun olacak.
+- Protokol ve mesaj akışı daha doğrudan görülecek.
+- Room, reconnect ve yayın davranışları proje içinde kontrol edilecek.
+- Gereksiz soyutlama ve fallback davranışları kullanılmayacak.
+- Modüler ve minimal proje yapısına daha uygun olacak.
 
-Native WebSocket'in ek sorumlulugu olarak reconnect, heartbeat, room yonetimi ve mesaj validation uygulama kodunda ayrica tasarlanacak.
+Bunun karşılığında reconnect, heartbeat, room yönetimi ve mesaj doğrulama uygulama içinde ayrıca tasarlanacaktır.
 
-## 4. WebSocket Mesaj Protokolu
+## 4. WebSocket Mesaj Protokolü
 
-Tum WebSocket mesajlari ortak bir JSON envelope kullanacak:
-
+Tüm WebSocket mesajları ortak bir JSON zarfı kullanacaktır.
 
 {
   "type": "pattern:lock",
@@ -83,11 +80,9 @@ Tum WebSocket mesajlari ortak bir JSON envelope kullanacak:
   }
 }
 
-
 ### Event isimlendirme
 
-Event isimleri `domain:action` formatinda olacak:
-
+Event isimleri domain:action formatında olacaktır.
 
 lobby:join
 round:start
@@ -96,21 +91,19 @@ playback:start
 vote:submit
 leaderboard:update
 
+### Mesaj kuralları
 
-### Mesaj kurallari
+- Oda bilgisi istemciden gelen roomId değerine güvenilerek kabul edilmeyecek. Sunucu oda bilgisini bağlantı durumundan bulacak.
+- Oyuncu kimliği istemci tarafından belirlenemeyecek. Sunucu bu bilgiyi bağlantı ve session eşleştirmesinden alacak.
+- Oyuncu sırası, puan, yetki, timer ve oyun durumu istemci mesajından kabul edilmeyecek.
+- requestId, istemci isteği ile sunucunun onay veya hata cevabını eşleştirmek için kullanılacak.
+- Gereken eventlerde sunucu zaman damgası veya sunucu durum sürümü bulunabilecek.
+- Sunucu her mesajda event tipini, payload bilgisini, oyuncu yetkisini ve mevcut oyun durumunu doğrulayacak.
+- İstemci mesajları komut veya istek, sunucu mesajları ise onay veya yayın olarak ele alınacak.
 
-- `roomId` client tarafindan gelen mesaja guvenilerek kabul edilmeyecek; server connection state'ten room bilgisini bulacak.
-- `playerId` client tarafindan belirlenemeyecek; server connection/session eslestirmesinden alinacak.
-- Oyuncu sirasi, puan, yetki, timer ve oyun state'i client mesajindan kabul edilmeyecek.
-- `requestId`, client istegi ile server acknowledgement veya error cevabini eslestirmek icin kullanilacak.
-- Gerekli event'lerde server timestamp'i veya server state version'i bulunabilecek.
-- Server gelen her mesajda event tipini, payload'i, oyuncu yetkisini ve mevcut game state'i validate edecek.
-- Client mesajlari komut/istek, server mesajlari acknowledgement veya broadcast olarak ele alinacak.
+### Mesaj akışı örneği
 
-### Ornek akis
-
-Client istegi:
-
+İstemci isteği:
 
 {
   "type": "pattern:lock",
@@ -120,9 +113,7 @@ Client istegi:
   }
 }
 
-
-Server acknowledgement:
-
+Sunucu onayı:
 
 {
   "type": "pattern:lock:accepted",
@@ -132,9 +123,7 @@ Server acknowledgement:
   }
 }
 
-
-Room broadcast:
-
+Oda yayını:
 
 {
   "type": "pattern:locked",
@@ -143,58 +132,56 @@ Room broadcast:
   }
 }
 
+## 5. Canlı Durum ve Kalıcı Veri
 
-## 5. Room State ve Kalici Veri
+Hibrit bir yapı kullanılacaktır. Oyun sırasında hızlı erişilmesi gereken bilgiler sunucu belleğinde, kalıcı olması gereken bilgiler PostgreSQL içinde tutulacaktır.
 
-Hibrit yapi kullanilacak.
+### Sunucu belleğinde tutulacak canlı durum
 
-### Server memory'de tutulacak canli state
+- Aktif room ve lobby registry
+- WebSocket bağlantıları
+- Oyuncuların bağlantı durumu
+- Aktif match ve instrument round aşaması
+- Timer bilgileri
+- Geçici pattern taslakları
+- Reconnect sayaçları
+- Playback ve oylama durumu
 
-- Aktif room/lobby registry
-- WebSocket connection bilgileri
-- Oyuncularin baglanti durumu
-- Aktif match ve instrument round fazi
-- Timer bilgisi
-- Gecici pattern draft'lari
-- Reconnect sayaclari
-- O anki playback ve voting state'i
+### PostgreSQL içinde tutulacak kalıcı veri
 
-### PostgreSQL'de tutulacak kalici veri
-
-- Lobby/session/match kayitlari
-- Lobby nickname'leri
-- Lock edilmis pattern'ler
-- Current ve archive pattern pool kayitlari
-- Song variant secimleri
+- Lobby, session ve match kayıtları
+- Lobby nickname bilgileri
+- Kilitlenmiş patternler
+- Current ve archive pattern pool kayıtları
+- Song variant seçimleri
 - Oylar
-- Match leaderboard puanlari
+- Match leaderboard puanları
 
-### MVP siniri
+### MVP sınırı
 
-Server restart recovery MVP kapsaminda olmayacak. Server kapanirsa aktif room state'i kaybolabilir ve aktif oyun iptal edilir; daha once PostgreSQL'e kaydedilmis kalici kayitlar korunur.
+Sunucu yeniden başladığında aktif oyun durumunu geri getirme özelliği MVP kapsamında değildir. Sunucu kapanırsa aktif room durumu kaybolabilir ve oyun iptal edilebilir. PostgreSQL içine daha önce kaydedilmiş kalıcı kayıtlar korunur.
 
-Redis MVP'de kullanilmayacak. 10 kisilik lobby olceginde memory + PostgreSQL yapisi yeterlidir.
+Redis MVP içinde kullanılmayacaktır. On kişilik lobby ölçeğinde sunucu belleği ve PostgreSQL birlikte yeterli olacaktır.
 
-## 6. Oyuncu Session Kimligi
+## 6. Oyuncu Session Kimliği
 
-MVP'de kalici hesap veya login olmayacak; oyuncu kimligi session cookie ile yonetilecek.
+MVP içinde kalıcı hesap veya login olmayacak, oyuncu kimliği session cookie ile yönetilecektir.
 
-- Oyuncu nickname girdikten sonra server bir session olusturacak.
-- Session cookie browser tarafinda tutulacak.
-- Nickname gorunen oyuncu adi olacak; reconnect eslestirmesinde server session cookie'yi esas alacak.
-- Nickname lobby icinde unique olacak.
-- Session cookie `HttpOnly` olarak ayarlanacak; JavaScript tarafindan okunamayacak.
-- Production ortaminda `Secure` kullanilacak.
-- `SameSite` politikasi frontend/backend deployment yapisina gore belirlenecek; gerektiginde `Lax` veya kontrollu `None` kullanilacak.
-- Ayrı frontend/backend gelistirme ortaminda CORS credentials ayari gerekecek.
-- WebSocket handshake sirasinda gelen cookie okunarak connection mevcut player session'ina baglanacak.
-- Session store MVP'de server memory'de tutulabilir; server restart recovery kapsam disi oldugu icin stale session temizleme kurali eklenecek.
+- Oyuncu nickname girdikten sonra sunucu bir session oluşturacak.
+- Session cookie tarayıcıda tutulacak.
+- Görünen oyuncu adı nickname olacak; reconnect eşleştirmesinde session cookie esas alınacak.
+- Nickname aynı lobby içinde benzersiz olacak.
+- Session cookie HttpOnly olarak ayarlanacak ve JavaScript tarafından okunamayacak.
+- Production ortamında Secure seçeneği kullanılacak.
+- SameSite politikası frontend ve backend dağıtım yapısına göre belirlenecek.
+- Ayrı frontend ve backend geliştirme ortamında CORS credentials ayarı yapılacak.
+- WebSocket bağlantısı kurulurken gelen cookie okunacak ve bağlantı mevcut player sessionına bağlanacak.
+- Session store MVP içinde sunucu belleğinde tutulabilir. Eski session kayıtları için temizleme kuralı eklenecek.
 
-## 7. Room Registry ve Connection Index'leri
+## 7. Room Registry ve Bağlantı Kayıtları
 
-Aktif WebSocket ve room state'i server memory'de uc ayri registry ile tutulacak:
+Aktif WebSocket ve room durumu sunucu belleğinde üç registry ile tutulacaktır.
 
-```text
 RoomRegistry:
 roomId -> RoomState
 
@@ -203,52 +190,47 @@ sessionId -> { roomId, playerId, nickname, status }
 
 ConnectionRegistry:
 socket -> sessionId
-```
 
-### RoomState
-
-Bir room icinde su canli bilgiler bulunabilir:
+Bir RoomState içinde şu bilgiler bulunabilir:
 
 - Oyuncular
-- Aktif session/match
+- Aktif session ve match
 - Game phase
 - Instrument round timer
-- Playback ve voting state'i
+- Playback ve oylama durumu
 - Reconnect bilgileri
 
-### Baglanti akisi
+### Bağlantı akışı
 
-1. WebSocket baglantisi gelir.
+1. WebSocket bağlantısı gelir.
 2. Session cookie okunur.
-3. SessionRegistry'den player ve room bulunur.
-4. ConnectionRegistry socket ile session'i eslestirir.
-5. RoomRegistry oyuncuyu online olarak isaretler.
+3. SessionRegistry içinden oyuncu ve room bulunur.
+4. ConnectionRegistry socket ile sessionı eşleştirir.
+5. RoomRegistry oyuncuyu çevrimiçi olarak işaretler.
 
-### Disconnect akisi
+### Disconnect akışı
 
-1. Socket kapandiginda ConnectionRegistry kaydi temizlenir.
-2. SessionRegistry oyuncuyu disconnected olarak isaretler.
-3. RoomState reconnect countdown'i baslatir.
-4. Oyuncu donerse yeni socket ayni session'a baglanir.
-5. Countdown biterse oyuncunun mevcut round katkisi game rule'a gore pas gecilir.
+1. Socket kapandığında ConnectionRegistry kaydı temizlenir.
+2. SessionRegistry oyuncuyu bağlantısı kesilmiş olarak işaretler.
+3. RoomState reconnect countdownı başlatır.
+4. Oyuncu dönerse yeni socket aynı sessiona bağlanır.
+5. Countdown biterse mevcut round katkısı oyun kuralına göre pas geçilir.
 
-PostgreSQL room registry'nin yerine kullanilmayacak. PostgreSQL kalici pattern, match, vote, archive ve leaderboard verilerini tutacak; memory registry canli WebSocket state'ini yonetecek.
+PostgreSQL room registry yerine kullanılmayacaktır. PostgreSQL kalıcı pattern, match, vote, archive ve leaderboard verilerini tutacak; bellek registryleri canlı WebSocket durumunu yönetecektir.
 
 ## 8. Heartbeat ve Kopukluk Tespiti
 
-Native WebSocket protocol-level ping/pong kullanilacak.
+Native WebSocket protocol-level ping-pong kullanılacaktır.
 
-```text
-Ping interval: 5 saniye
-Pong timeout: 3 saniye
-Kacirilan ping limiti: 2
+Ping aralığı: 5 saniye
+Pong bekleme süresi: 3 saniye
+Kaçırılan ping sınırı: 2
 Reconnect countdown: 30 saniye
-```
 
-- Server her 5 saniyede bagli client'lara ping gonderecek.
-- Client pong cevabi verirse connection `lastSeen` degeri guncellenecek.
-- Iki ping cevapsiz kalirsa server connection'i kopmus kabul edecek.
-- Normal WebSocket `close` event'i gelirse countdown heartbeat beklenmeden baslatilacak.
-- Kopukluk tespit edilince RoomState icindeki oyuncu `disconnected` isaretlenecek ve 30 saniyelik reconnect countdown baslayacak.
-- Heartbeat, reconnect countdown'un bir parcasi olarak bekletilmeyecek; baglanti kontrolu paralel calisacak.
-- 15 saniye veya daha uzun ping araligi MVP icin kullanilmayacak; kopukluk tespitini gereksiz geciktirir.
+- Sunucu her 5 saniyede bağlı istemcilere ping gönderecek.
+- İstemciden pong cevabı gelirse bağlantının lastSeen değeri güncellenecek.
+- İki ping cevapsız kalırsa sunucu bağlantıyı kopmuş kabul edecek.
+- Normal WebSocket close eventi gelirse heartbeat beklenmeden countdown başlatılacak.
+- Kopukluk tespit edilince oyuncu RoomState içinde disconnected olarak işaretlenecek ve 30 saniyelik reconnect countdown başlayacak.
+- Heartbeat, reconnect countdownın bir parçası olarak bekletilmeyecek; iki süreç paralel çalışacak.
+- On beş saniye veya daha uzun ping aralığı kullanılmayacak. Bu kadar uzun aralık kopukluk tespitini gereksiz yere geciktirir.
