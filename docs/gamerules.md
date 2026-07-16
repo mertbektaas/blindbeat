@@ -197,7 +197,7 @@ Sunucu ses render etmez. Sunucu pattern referanslarını, BPM değerini, playbac
 - Nickname aynı lobby içinde benzersiz olmak zorundadır.
 - Session başladığında lobby kilitlenir.
 - Sessionı başlatan oyuncunun host yetkisi yoktur; sunucu tek otoritedir.
-- Session bittikten sonra aynı lobby yeniden kullanılmaz; yeni oyun için yeni lobby açılır.
+- Session bittikten sonra oyuncular lobbyden ayrılmadıysa aynı lobby içinde yeni bir session başlatılabilir.
 - Tüm oyuncular ayrılınca lobby silinir.
 
 ## 16. Reconnect
@@ -220,4 +220,3 @@ Sunucu ses render etmez. Sunucu pattern referanslarını, BPM değerini, playbac
 - Gerçek gitar fiziği yoktur; gitar etkileşimi tel kesişmelerine indirgenir.
 - Estetik ve animasyon detayları teknik temel oturduktan sonra belirlenecektir.
 - Pool, puan ve OG Round algoritmaları config üzerinden değiştirilebilir tasarlanacaktır.
-

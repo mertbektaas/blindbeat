@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LobbyStatus {
+  OPEN
+  IN_SESSION
+  CLOSED
+}
+
+enum SessionStatus {
+  WAITING
+  RUNNING
+  COMPLETED
+}
+
+enum PatternPoolStatus {
+  ACTIVE
+  ARCHIVE
+  CONSUMED
+}
+
+model Lobby {
+  id        Int         @id @default(autoincrement())
+  code      String      @unique
+  status    LobbyStatus @default(OPEN)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  players  Player[]
+  sessions Session[]
+}
+
+model Player {
+  id        Int      @id @default(autoincrement())
+  nickname  String
+  lobbyId   Int
+  createdAt DateTime @default(now())
+
+  lobby              Lobby                @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  sessionMemberships SessionPlayer[]
+  patterns           Pattern[]
+  votes              Vote[]
+  leaderboardEntries SessionLeaderboard[]
+
+  @@unique([lobbyId, nickname])
+  @@index([lobbyId])
+}
+
+model Session {
+  id            Int           @id @default(autoincrement())
+  lobbyId       Int
+  status        SessionStatus @default(WAITING)
+  maxMatchCount Int           @default(1)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  lobby       Lobby                @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  players     SessionPlayer[]
+  matches     Match[]
+  leaderboard SessionLeaderboard[]
+
+  @@index([lobbyId, status])
+}
+
+model SessionPlayer {
+  sessionId Int
+  playerId  Int
+  joinedAt  DateTime @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  player  Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, playerId])
+  @@index([playerId])
+}
+
+model Instrument {
+  id       Int     @id @default(autoincrement())
+  code     String  @unique
+  name     String
+  category String
+  enabled  Boolean @default(true)
+
+  patterns         Pattern[]
+  songVariantSlots SongVariantPattern[]
+}
+
+model Match {
+  id          Int      @id @default(autoincrement())
+  sessionId   Int
+  matchNumber Int
+  createdAt   DateTime @default(now())
+
+  session      Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  patterns     Pattern[]
+  songVariants SongVariant[]
+  votes        Vote[]
+
+  @@unique([sessionId, matchNumber])
+  @@index([sessionId])
+}
+
+model Pattern {
+  id           Int               @id @default(autoincrement())
+  playerId     Int
+  matchId      Int
+  instrumentId Int
+  poolStatus   PatternPoolStatus @default(ACTIVE)
+  patternData  Json
+  createdAt    DateTime          @default(now())
+
+  player     Player               @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  match      Match                @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  instrument Instrument           @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  songSlots  SongVariantPattern[]
+
+  @@unique([playerId, matchId, instrumentId])
+  @@index([matchId, instrumentId, poolStatus])
+  @@index([instrumentId, poolStatus])
+}
+
+model SongVariant {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  variantNo Int
+  createdAt DateTime @default(now())
+
+  match    Match                @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  patterns SongVariantPattern[]
+  votes    Vote[]
+
+  @@unique([matchId, variantNo])
+  @@index([matchId])
+}
+
+model SongVariantPattern {
+  songVariantId Int
+  patternId     Int
+  instrumentId  Int
+  slotOrder     Int
+
+  songVariant SongVariant @relation(fields: [songVariantId], references: [id], onDelete: Cascade)
+  pattern     Pattern     @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  instrument  Instrument  @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+
+  @@id([songVariantId, patternId])
+  @@unique([songVariantId, instrumentId])
+  @@index([patternId])
+}
+
+model Vote {
+  id            Int      @id @default(autoincrement())
+  matchId       Int
+  playerId      Int
+  songVariantId Int
+  createdAt     DateTime @default(now())
+
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player      Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  songVariant SongVariant @relation(fields: [songVariantId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, playerId])
+  @@index([songVariantId])
+}
+
+model SessionLeaderboard {
+  sessionId  Int
+  playerId   Int
+  totalScore Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  player  Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, playerId])
+  @@index([sessionId, totalScore])
+}
+
+model PrismaHealthCheck {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+}
