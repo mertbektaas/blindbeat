@@ -1,4 +1,5 @@
 require("dotenv").config();
+const gameConfig = require("./config/game.config.js");
 
 const { createApp } = require("./app");
 const logger = require("./logger");
@@ -19,7 +20,17 @@ async function start() {
     logger.info("server_started", {
       port,
       frontendOrigin,
-      database: "connected"
+      database: "connected",
+      gameConfig: {
+        bpm: gameConfig.defaultBpm,
+        stepCount: gameConfig.defaultStepCount,
+        instrumentRoundSeconds: gameConfig.instrumentRoundSeconds,
+        playbackLoops: gameConfig.playbackLoops,
+        songVariantCount: gameConfig.songVariantCount,
+        minPlayers: gameConfig.minPlayers,
+        maxPlayers: gameConfig.maxPlayers,
+        maxMatchCount: gameConfig.maxMatchCount
+      }
     });
   });
 }
