@@ -1,4 +1,7 @@
-const { validateDrumPattern } = require("../src/validation/pattern.schemas");
+const { validateDrumPattern,
+        validateMelodicPattern,
+        validatePattern
+ } = require("../src/validation/pattern.schemas");
 
 test("gecerli davul true donmeli", () => {
     const pattern = {
@@ -24,7 +27,6 @@ const result = validateDrumPattern(pattern);
 expect(result.valid).toBe(true);
 });
 
-
 test("stepCount ve steps uzunlugu uyusmali", () => {
     const pattern = {
     version: 1,
@@ -47,4 +49,82 @@ test("stepCount ve steps uzunlugu uyusmali", () => {
 };
 const result = validateDrumPattern(pattern);
 expect(result.valid).toBe(false);
+});
+
+test("gecerli melodi true donmeli", () =>{
+    const pattern = {
+        version: 1,
+        instrumentType: "bass",
+        stepCount: 2,
+        data: {
+            steps: [
+                null,
+                {
+                    note: "C3",
+                    velocity: 0.8
+                }
+            ]
+        }
+    };
+    const result = validateMelodicPattern(pattern);
+    expect(result.valid).toBe(true);
+});
+
+test("gecersiz melodik pattern reddedilir", () =>{
+    const pattern = {
+        version: 1,
+        instrumentType: "bass",
+        stepCount: 2,
+        data: {
+            steps: [
+                null,
+                {
+                    note: "C3",
+                    velocity: 1.5
+                }
+            ]
+        }
+    };
+    const result = validateMelodicPattern(pattern);
+    expect(result.valid).toBe(false);
+});
+
+test("dogru instrument type kabul edilir", () =>{
+    const pattern ={
+        version: 1,
+        instrumentType: "bass",
+        stepCount: 2,
+        data:{
+            steps: [
+                null,
+                {
+                    note: "C3",
+                    velocity: 0.3
+                }
+            ]
+        }
+    };
+
+    const result = validatePattern(pattern);
+    expect(result.valid).toBe(true);
+});
+
+test("yanlis instrument type reddedilir", () =>{
+    const pattern ={
+        version: 1,
+        instrumentType: "guitar",
+        stepCount: 2,
+        data:{
+            steps: [
+                null,
+                {
+                    note: "C3",
+                    velocity: 0.3
+                }
+            ]
+        }
+    };
+
+    const result = validatePattern(pattern);
+    expect(result.valid).toBe(false);
 });

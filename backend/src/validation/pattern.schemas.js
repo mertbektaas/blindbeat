@@ -27,10 +27,38 @@ const drumPatternSchema = basePatternSchema
             context.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["data", "steps"],
+                message: "stepCount ve steps uzunlugu birbirine esit olmali."
             })
         }
     });
 
+
+
+const melodicStepSchema = z.union([
+    z.null(),
+    z.object({
+        note: z.string().min(1),
+        velocity: z.number().min(0).max(1),
+    })
+])
+
+const melodicDataSchema = z.object({
+    steps: z.array(melodicStepSchema).min(1).max(64)
+});
+
+const melodicPatternSchema = basePatternSchema
+    .extend({
+        data: melodicDataSchema
+    })
+    .superRefine((pattern, context) => {
+        if ( pattern.stepCount !== pattern.data.steps.length){
+            context.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["data", "steps"],
+                message: "stepCount ile steps uzunglugu esit olmalidir."
+            });
+        }
+    });
 
 
 function validateBasePattern(pattern) {
@@ -43,11 +71,42 @@ function validateDrumPattern(pattern) {
     return result.success ? { valid: true, data: result.data } : { valid: false, error: result.error };
 }
 
+function validateMelodicPattern(pattern){
+    const result = melodicPatternSchema.safeParse(pattern);
+    return result.success ? { valid: true, data:result.data } : {valid:false, error: result.error};
+}
+
+function validatePattern(pattern){
+    const validator = patternValidators[pattern.instrumentType];
+
+    if(!validator){
+        return {
+            valid: false,
+            error: {
+                code:"UNSUPPORTED_INSTRUMENT_TYPE",
+                message: "bu enstruman icin pattern dogrulamasi bulunamadi."
+            }
+        };
+    }
+
+    return validator(pattern);
+}
+
+const patternValidators = {
+    drums: validateDrumPattern,
+    bass: validateMelodicPattern
+}
+
 module.exports = {
-    basePatternSchema,
     validateBasePattern,
     validateDrumPattern,
-    drumPatternSchema,
+    validateMelodicPattern,
+    validatePattern,
+    basePatternSchema,
+    drumStepSchema,
     drumDataSchema,
-    drumStepSchema
+    drumPatternSchema,
+    melodicStepSchema,
+    melodicDataSchema,
+    melodicPatternSchema
 }
