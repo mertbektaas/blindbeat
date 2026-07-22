@@ -3,7 +3,7 @@ const cors = require("cors");
 const { randomUUID } = require("node:crypto");
 const { success, failure } = require("./response");
 
-function createApp({ frontendOrigin }) {
+function createApp({ frontendOrigin, lobbyRoutes = express.Router() }) {
   const app = express();
 
   app.use(cors({
@@ -25,6 +25,8 @@ function createApp({ frontendOrigin }) {
       status: "ok"
     }, req.requestId));
   });
+  
+  app.use("/lobbies", lobbyRoutes);
 
   app.use((req, res) => {
     res.status(404).json(failure(
@@ -35,16 +37,35 @@ function createApp({ frontendOrigin }) {
   });
 
   app.use((error, req, res, next) => {
+    console.error("REQUEST_ERROR:", error);
+
     if (res.headersSent) {
-      return next(error);
+        return next(error);
     }
 
-    res.status(500).json(failure(
-      "INTERNAL_SERVER_ERROR",
-      "Beklenmeyen bir server hatası oluştu.",
-      req.requestId
-    ));
-  });
+    const isKnownError =
+        Number.isInteger(error?.statusCode);
+
+    const statusCode = isKnownError
+        ? error.statusCode
+        : 500;
+
+    const errorCode = isKnownError
+        ? error.code
+        : "INTERNAL_SERVER_ERROR";
+
+    const errorMessage = isKnownError
+        ? error.message
+        : "Beklenmeyen bir server hatası oluştu.";
+
+    res.status(statusCode).json(
+        failure(
+            errorCode,
+            errorMessage,
+            req.requestId
+        )
+    );
+});
 
   return app;
 }

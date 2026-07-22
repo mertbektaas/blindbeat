@@ -60,10 +60,17 @@ model Session {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  lobby       Lobby           @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
-  players     SessionPlayer[]
-  matches     Match[]
-  leaderboard SessionLeaderboard[]
+  lobby              Lobby                @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  players            SessionPlayer[]
+  matches            Match[]
+  leaderboard        SessionLeaderboard[]
+  sessionInstruments SessionInstrument[]
+
+  bpm                    Int @default(120)
+  stepCount              Int @default(8)
+  instrumentRoundSeconds Int @default(30)
+  playbackLoops          Int @default(5)
+  songVariantCount       Int @default(3)
 
   @@index([lobbyId, status])
 }
@@ -80,6 +87,21 @@ model SessionPlayer {
   @@index([playerId])
 }
 
+model SessionInstrument {
+  sessionId    Int
+  instrumentId Int
+  orderNo      Int
+  createdAt    DateTime @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+
+  @@id([sessionId, instrumentId])
+  @@unique([sessionId, orderNo])
+  @@index([instrumentId])
+}
+
 model Instrument {
   id       Int     @id @default(autoincrement())
   code     String  @unique
@@ -87,8 +109,9 @@ model Instrument {
   category String
   enabled  Boolean @default(true)
 
-  patterns         Pattern[]
-  songVariantSlots SongVariantPattern[]
+  patterns           Pattern[]
+  songVariantSlots   SongVariantPattern[]
+  sessionInstruments SessionInstrument[]
 }
 
 model Match {
