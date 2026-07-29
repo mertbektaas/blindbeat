@@ -52,6 +52,14 @@ function sessionNotFound() {
     )
 }
 
+function matchNotFound() {
+    return new DomainError(
+        "MATCH_NOT_FOUND",
+        "Match bulunamadi",
+        404
+    );
+}
+
 function identityNotFound() {
     // 401
     return new DomainError(
@@ -108,6 +116,46 @@ function instrumentNotAvailable(code) {
     );
 }
 
+function playerNotInSession() {
+    return new DomainError(
+        "PLAYER_NOT_IN_SESSION",
+        "Oyuncu bu sessiona dahil degil.",
+        403
+    );
+}
+
+function votingNotOpen() {
+    return new DomainError(
+        "VOTING_NOT_OPEN",
+        "Oylama henuz acilmadi.",
+        409
+    );
+}
+
+function songVariantNotFound() {
+    return new DomainError(
+        "SONG_VARIANT_NOT_FOUND",
+        "Secilen sarki varyanti bulunamadi.",
+        404
+    );
+}
+
+function voteAlreadySubmitted() {
+    return new DomainError(
+        "VOTE_ALREADY_SUBMITTED",
+        "Bu match icin zaten oy kullandiniz.",
+        409
+    );
+}
+
+function votingNotComplete() {
+    return new DomainError(
+        "VOTING_NOT_COMPLETE",
+        "Tum oyuncular henuz oy kullanmadi.",
+        409
+    );
+}
+
 module.exports = {
     DomainError,
     lobbyNotFound,
@@ -115,10 +163,16 @@ module.exports = {
     lobbyFull,
     nicknameTaken,
     sessionNotFound,
+    matchNotFound,
     identityNotFound,
     originNotAllowed,
     mapPrismaError,
     minPlayersNotReached,
     invalidSessionConfig,
-    instrumentNotAvailable
+    instrumentNotAvailable,
+    playerNotInSession,
+    votingNotOpen,
+    songVariantNotFound,
+    voteAlreadySubmitted,
+    votingNotComplete
 };

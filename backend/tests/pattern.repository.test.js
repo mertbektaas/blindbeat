@@ -128,6 +128,44 @@ describe("PatternRepository", () => {
         expect(result).toEqual(fakePatterns);
     });
 
+    test("session icindeki secili enstrumanlarin aktif patternlerini getirir", async () => {
+        const fakePatterns = [
+            {
+                id: 10,
+                playerId: 1,
+                matchId: 4,
+                instrumentId: 2,
+                poolStatus: "ACTIVE",
+                patternData: { steps: [] }
+            }
+        ];
+
+        const prisma = {
+            pattern: {
+                findMany: jest.fn().mockResolvedValue(fakePatterns)
+            }
+        };
+
+        const repository = createPatternRepository(prisma);
+
+        const result = await repository.getAllActivePatterns(9, [2, 5]);
+
+        expect(prisma.pattern.findMany).toHaveBeenCalledWith({
+            where: {
+                instrumentId: { in: [2, 5] },
+                poolStatus: "ACTIVE",
+                match: {
+                    sessionId: 9
+                }
+            },
+            orderBy: {
+                createdAt: "asc"
+            }
+        });
+
+        expect(result).toEqual(fakePatterns);
+    });
+
     test("pattern havuz durumunu gunceller", async () => {
         
         const fakePatternUpdate = {
@@ -155,6 +193,52 @@ describe("PatternRepository", () => {
         });
 
         expect(result).toEqual(fakePatternUpdate);
+    });
+
+    test("session icindeki tied oyuncularin archive patternlerini getirir", async () => {
+        const fakePatterns = [
+            {
+                id: 41,
+                playerId: 2,
+                matchId: 7,
+                instrumentId: 10,
+                poolStatus: "ARCHIVE"
+            }
+        ];
+
+        const prisma = {
+            pattern: {
+                findMany: jest.fn().mockResolvedValue(fakePatterns)
+            }
+        };
+
+        const repository = createPatternRepository(prisma);
+
+        const result = await repository.findArchivedBySessionAndPlayers({
+            sessionId: 5,
+            playerIds: [2, 4],
+            instrumentIds: [10, 11],
+            excludedPatternIds: [30]
+        });
+
+        expect(prisma.pattern.findMany).toHaveBeenCalledWith({
+            where: {
+                poolStatus: "ARCHIVE",
+                playerId: { in: [2, 4] },
+                instrumentId: { in: [10, 11] },
+                match: {
+                    sessionId: 5
+                },
+                id: {
+                    notIn: [30]
+                }
+            },
+            orderBy: {
+                createdAt: "asc"
+            }
+        });
+
+        expect(result).toEqual(fakePatterns);
     });
 
     

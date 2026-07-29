@@ -1,6 +1,7 @@
 const {
     validateStartSession
 } = require("../src/validation/session.schemas");
+const gameConfig = require("../src/config/game.config");
 
 describe("Session schemas", () => {
     test("gecerli session ayarlarini kabul eder", () => {
@@ -33,7 +34,9 @@ describe("Session schemas", () => {
         expect(result.data.maxMatchCount).toBe(5);
         expect(result.data.bpm).toBe(120);
         expect(result.data.stepCount).toBe(8);
-        expect(result.data.instrumentRoundSeconds).toBe(30);
+        expect(result.data.instrumentRoundSeconds).toBe(
+            gameConfig.instrumentRoundSeconds
+        );
         expect(result.data.playbackLoops).toBe(5);
         expect(result.data.songVariantCount).toBe(3);
     });

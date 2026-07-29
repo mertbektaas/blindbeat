@@ -59,6 +59,26 @@ function createSessionLeaderboardRepository(prisma) {
                     totalScore
                 }
             });
+        },
+
+        incrementScore({
+            sessionId,
+            playerId,
+            points
+        }) {
+            return prisma.sessionLeaderboard.update({
+                where: {
+                    sessionId_playerId: {
+                        sessionId,
+                        playerId
+                    }
+                },
+                data: {
+                    totalScore: {
+                        increment: points
+                    }
+                }
+            });
         }
     };
 }

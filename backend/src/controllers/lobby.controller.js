@@ -37,39 +37,48 @@ function createLobbyController({
         },
 
         async joinLobby(req, res, next) {
-    try {
-        const lobbyCode = req.params.lobbyCode;
-        const nickname = req.body.nickname;
+            try {
+                const lobbyCode = req.params.lobbyCode;
+                const nickname = req.body.nickname;
+                const existingToken = readPlayerSessionToken(
+                    req.headers.cookie
+                );
+                const existingIdentity = identityRegistry.get(existingToken);
 
-        const result = await lobbyService.joinLobby({
-            lobbyCode,
-            nickname
-        });
+                const result = await lobbyService.joinLobby({
+                    lobbyCode,
+                    nickname,
+                    existingIdentity
+                });
 
-        const cookie = createPlayerSessionCookie(
-            result.identity.token
-        );
+                const playerSessionToken = result.reconnected
+                    ? existingToken
+                    : result.identity.token;
 
-        if (lobbyBroadcaster) {
-            await lobbyBroadcaster.broadcastLobbyEvent({
-                lobbyId: result.lobby.id,
-                type: "lobby:player-joined",
-                changedPlayer: {
-                    nickname: result.player.nickname,
-                    action: "joined"
+                const cookie = createPlayerSessionCookie(
+                    playerSessionToken
+                );
+
+                if (lobbyBroadcaster && !result.reconnected) {
+                    await lobbyBroadcaster.broadcastLobbyEvent({
+                        lobbyId: result.lobby.id,
+                        type: "lobby:player-joined",
+                        changedPlayer: {
+                            nickname: result.player.nickname,
+                            action: "joined"
+                        }
+                    });
                 }
-            });
-        }
 
-        const { identity, ...publicResult } = result;
+                const { identity, ...publicResult } = result;
 
-        res
-            .status(201)
-            .setHeader("Set-Cookie", [cookie])
-            .json(success(publicResult, req.requestId));
-    } catch (error) {
-        next(error);
-    }
+                res
+                    .status(result.reconnected ? 200 : 201)
+                    .setHeader("Set-Cookie", [cookie])
+                    .json(success(publicResult, req.requestId));
+            } catch (error) {
+                next(error);
+            }
         },
 
         async leaveLobby(req, res, next) {
@@ -151,6 +160,12 @@ function createLobbyController({
                     lobbyCode,
                     identity,
                     config
+                });
+                
+                roomRegistry.setActiveSession({
+                    lobbyId: result.lobby.id,
+                    lobbyCode,
+                    sessionId: result.session.id
                 });
 
                 res

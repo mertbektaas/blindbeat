@@ -89,6 +89,25 @@ test("gecersiz melodik pattern reddedilir", () =>{
     expect(result.valid).toBe(false);
 });
 
+test("gecersiz nota formati reddedilir", () => {
+    const pattern = {
+        version: 1,
+        instrumentType: "bass",
+        stepCount: 1,
+        data: {
+            steps: [
+                {
+                    note: "x1",
+                    velocity: 0.8
+                }
+            ]
+        }
+    };
+
+    const result = validateMelodicPattern(pattern);
+    expect(result.valid).toBe(false);
+});
+
 test("dogru instrument type kabul edilir", () =>{
     const pattern ={
         version: 1,
@@ -112,7 +131,7 @@ test("dogru instrument type kabul edilir", () =>{
 test("yanlis instrument type reddedilir", () =>{
     const pattern ={
         version: 1,
-        instrumentType: "guitar",
+        instrumentType: "unknown-instrument",
         stepCount: 2,
         data:{
             steps: [

@@ -12,7 +12,23 @@ const {
     createSessionService
 } = require("../../src/services/session.service");
 
-const service = createSessionService({ prisma });
+const {
+    createGameRuntimeRegistry
+} = require("../../src/game/runtime.registry");
+
+const {
+    createSessionRuntimeBootstrap
+} = require("../../src/game/session.runtime.bootstrap");
+
+const runtimeRegistry = createGameRuntimeRegistry();
+const sessionRuntimeBootstrap = createSessionRuntimeBootstrap({
+    runtimeRegistry
+});
+
+const service = createSessionService({
+    prisma,
+    sessionRuntimeBootstrap
+});
 
 const validConfig = {
     maxMatchCount: 5,

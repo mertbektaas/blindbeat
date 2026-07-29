@@ -156,7 +156,8 @@ describe("LobbyService", () => {
                 identityRegistry,
                 generateLobbyCode: () => "ABCD"
             }),
-            identityRegistry
+            identityRegistry,
+            tx
         };
     }
 
@@ -227,6 +228,46 @@ describe("LobbyService", () => {
             code: "LOBBY_LOCKED",
             statusCode: 409
         });
+    });
+
+    test("mevcut identity kilitli lobbyye yeniden baglanabilir", async () => {
+        const currentPlayer = {
+            id: 5,
+            lobbyId: 1,
+            nickname: "Mert"
+        };
+
+        const { service, identityRegistry, tx } = createJoinTestService({
+            lobby: {
+                id: 1,
+                code: "ABCD",
+                status: "IN_SESSION",
+                players: [currentPlayer]
+            }
+        });
+
+        const result = await service.joinLobby({
+            lobbyCode: "ABCD",
+            nickname: "Mert",
+            existingIdentity: {
+                playerId: 5,
+                lobbyId: 1,
+                nickname: "Mert"
+            }
+        });
+
+        expect(result).toEqual({
+            lobby: {
+                id: 1,
+                code: "ABCD",
+                status: "IN_SESSION",
+                players: [currentPlayer]
+            },
+            player: currentPlayer,
+            reconnected: true
+        });
+        expect(tx.player.create).not.toHaveBeenCalled();
+        expect(identityRegistry.create).not.toHaveBeenCalled();
     });
 
     test("dolu lobbyye katilmayi reddeder", async () => {

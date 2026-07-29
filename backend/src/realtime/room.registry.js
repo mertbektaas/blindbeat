@@ -57,12 +57,38 @@ function createRoomRegistry() {
         roomByLobbyId.delete(lobbyId);
     }
 
+    function setActiveSession({
+        lobbyId,
+        lobbyCode,
+        sessionId
+    }) {
+        const room = getOrCreateRoom(lobbyId, lobbyCode);
+
+        room.activeSessionId = sessionId;
+
+        return room;
+    }
+
+    function clearActiveSession(lobbyId) {
+        const room = roomByLobbyId.get(lobbyId);
+
+        if (!room) {
+            return false;
+        }
+
+        room.activeSessionId = null;
+
+        return true;
+    }
+
     return {
         getOrCreateRoom,
         getRoom,
         addPlayer,
         removePlayer,
-        deleteRoom
+        deleteRoom,
+        setActiveSession,
+        clearActiveSession
     };
 }
 

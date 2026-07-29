@@ -67,7 +67,8 @@ function createLobbyService({
         },
          async joinLobby({
             lobbyCode,
-            nickname
+            nickname,
+            existingIdentity = null
         }) {
             
             let result;
@@ -82,6 +83,22 @@ function createLobbyService({
                 
                 if(!lobby){
                     throw lobbyNotFound();
+                }
+
+                const reconnectingPlayer = (
+                    existingIdentity?.lobbyId === lobby.id
+                )
+                    ? lobby.players.find(
+                        player => player.id === existingIdentity.playerId
+                    )
+                    : null;
+
+                if (reconnectingPlayer) {
+                    return {
+                        lobby,
+                        player: reconnectingPlayer,
+                        reconnected: true
+                    };
                 }
 
                 if(lobby.status !== LobbyStatus.OPEN){
@@ -105,7 +122,11 @@ function createLobbyService({
 
                 const updatedLobby = await lobbyRepository.findByCodeWithPlayers(lobbyCode);
 
-                return {lobby: updatedLobby, player};
+                return {
+                    lobby: updatedLobby,
+                    player,
+                    reconnected: false
+                };
             })
             }
 
@@ -114,6 +135,10 @@ function createLobbyService({
             }
 
             const { lobby, player} = result;
+
+            if (result.reconnected) {
+                return result;
+            }
 
             const identity = identityRegistry.create({
                     playerId: player.id,
@@ -124,7 +149,8 @@ function createLobbyService({
             return {
                 lobby,
                 player,
-                identity
+                identity,
+                reconnected: false
             };
         },
         async leaveLobby({

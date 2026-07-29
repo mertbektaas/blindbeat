@@ -3,7 +3,12 @@ const cors = require("cors");
 const { randomUUID } = require("node:crypto");
 const { success, failure } = require("./response");
 
-function createApp({ frontendOrigin, lobbyRoutes = express.Router() }) {
+function createApp({
+  frontendOrigin,
+  lobbyRoutes = express.Router(),
+  playbackRoutes = express.Router(),
+  leaderboardRoutes = express.Router()
+}) {
   const app = express();
 
   app.use(cors({
@@ -27,6 +32,8 @@ function createApp({ frontendOrigin, lobbyRoutes = express.Router() }) {
   });
   
   app.use("/lobbies", lobbyRoutes);
+  app.use("/matches", playbackRoutes);
+  app.use("/matches", leaderboardRoutes);
 
   app.use((req, res) => {
     res.status(404).json(failure(

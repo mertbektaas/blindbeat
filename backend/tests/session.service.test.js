@@ -19,6 +19,7 @@ function createTestContext({
         bass: { id: 21, code: "bass", enabled: true }
     },
     sessionCreateError,
+    matchCreateError,
     sessionInstrumentCreateError,
     sessionPlayerCreateError,
     leaderboardCreateError
@@ -47,6 +48,15 @@ function createTestContext({
                     status: "RUNNING"
                 })
         },
+        match: {
+            create: matchCreateError
+                ? jest.fn().mockRejectedValue(matchCreateError)
+                : jest.fn().mockResolvedValue({
+                    id: 500,
+                    sessionId: 100,
+                    matchNumber: 1
+                })
+        },
         sessionInstrument: {
             createMany: sessionInstrumentCreateError
                 ? jest.fn().mockRejectedValue(sessionInstrumentCreateError)
@@ -68,16 +78,22 @@ function createTestContext({
         $transaction: jest.fn(async callback => callback(tx))
     };
 
+    const sessionRuntimeBootstrap = {
+        createRuntimeForSession: jest.fn()
+    };
+
     const service = createSessionService({
         prisma,
-        identityRegistry: {}
+        identityRegistry: {},
+        sessionRuntimeBootstrap
     });
 
     return {
         service,
         prisma,
         tx,
-        updatedLobby
+        updatedLobby,
+        sessionRuntimeBootstrap
     };
 }
 
@@ -99,7 +115,13 @@ const validIdentity = {
 
 describe("SessionService", () => {
     test("gecerli session snapshot ve iliskileri olusturur", async () => {
-        const { service, prisma, tx, updatedLobby } = createTestContext();
+        const {
+            service,
+            prisma,
+            tx,
+            updatedLobby,
+            sessionRuntimeBootstrap
+        } = createTestContext();
 
         const result = await service.startSession({
             lobbyCode: "ABCD",
@@ -122,6 +144,12 @@ describe("SessionService", () => {
                 playbackLoops: 5,
                 songVariantCount: 3,
                 status: "RUNNING"
+            }
+        });
+        expect(tx.match.create).toHaveBeenCalledWith({
+            data: {
+                sessionId: 100,
+                matchNumber: 1
             }
         });
         expect(tx.sessionInstrument.createMany).toHaveBeenCalledWith({
@@ -148,6 +176,20 @@ describe("SessionService", () => {
         });
         expect(result.lobby).toEqual(updatedLobby);
         expect(result.session.id).toBe(100);
+        expect(result.match.id).toBe(500);
+        expect(sessionRuntimeBootstrap.createRuntimeForSession).toHaveBeenCalledWith({
+            session: result.session,
+            playerIds: [1, 2, 3, 4],
+            sessionInstruments: [
+                { instrumentId: 20, orderNo: 1 },
+                { instrumentId: 21, orderNo: 2 }
+            ],
+            instruments: [
+                { id: 20, code: "kick", enabled: true },
+                { id: 21, code: "bass", enabled: true }
+            ],
+            matchId: 500
+        });
     });
 
     test("lobby bulunamazsa session olusturmaz", async () => {

@@ -24,3 +24,9 @@ build/
 
 # Local execution plans
 planning/
+
+# Local explanation log
+logs/
+
+# Local frontend design experiments
+frontendProgress/

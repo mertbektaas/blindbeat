@@ -125,7 +125,16 @@ describe("WebSocket handshake", () => {
     });
 
     afterAll(async () => {
-        webSocketServer.close();
+        await new Promise((resolve, reject) => {
+            webSocketServer.close((error) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve();
+            });
+        });
 
         await new Promise((resolve) => {
             httpServer.close(resolve);

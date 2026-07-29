@@ -14,6 +14,15 @@ const {
 const { createLobbyService } = require("../../src/services/lobby.service");
 const { createSessionService } = require("../../src/services/session.service");
 const {
+    createGameRuntimeRegistry
+} = require("../../src/game/runtime.registry");
+const {
+    createSessionRuntimeBootstrap
+} = require("../../src/game/session.runtime.bootstrap");
+const {
+    createRoomRegistry
+} = require("../../src/realtime/room.registry");
+const {
     createLobbyController
 } = require("../../src/controllers/lobby.controller");
 const { createLobbyRoutes } = require("../../src/routes/lobby.routes");
@@ -23,17 +32,24 @@ const lobbyService = createLobbyService({
     prisma,
     identityRegistry
 });
+const runtimeRegistry = createGameRuntimeRegistry();
+const sessionRuntimeBootstrap = createSessionRuntimeBootstrap({
+    runtimeRegistry
+});
 const sessionService = createSessionService({
     prisma,
-    identityRegistry
+    identityRegistry,
+    sessionRuntimeBootstrap
 });
+const roomRegistry = createRoomRegistry();
 const lobbyController = createLobbyController({
     lobbyService,
     sessionService,
     createPlayerSessionCookie,
     readPlayerSessionToken,
     clearPlayerSessionCookie,
-    identityRegistry
+    identityRegistry,
+    roomRegistry
 });
 const lobbyRoutes = createLobbyRoutes({ lobbyController });
 const app = createApp({
@@ -117,19 +133,18 @@ test("REST akisi lobby olusturur, player ekler ve player cikartir", async () => 
 test("REST akisi dort oyuncuyla session baslatir", async () => {
     const suffix = Date.now();
     const created = await createLobby(`session-owner-${suffix}`);
-    let lastCookie;
+    let lastJoined;
 
     for (const label of ["a", "b", "c"]) {
-        const joined = await joinLobby(
+        lastJoined = await joinLobby(
             created.lobby.code,
             `session-player-${label}-${suffix}`
         );
-        lastCookie = joined.cookie;
     }
 
     const response = await request(app)
         .post(`/lobbies/${created.lobby.code}/sessions`)
-        .set("Cookie", lastCookie)
+        .set("Cookie", lastJoined.cookie)
         .send({
             maxMatchCount: 5,
             bpm: 120,
@@ -150,6 +165,18 @@ test("REST akisi dort oyuncuyla session baslatir", async () => {
     ]);
     expect(response.body.data.config.instrumentCodes)
         .toEqual(["kick", "bass"]);
+
+    const reconnectResponse = await request(app)
+        .post(`/lobbies/${created.lobby.code}/join`)
+        .set("Cookie", lastJoined.cookie)
+        .send({
+            nickname: lastJoined.player.nickname
+        });
+
+    expect(reconnectResponse.status).toBe(200);
+    expect(reconnectResponse.body.success).toBe(true);
+    expect(reconnectResponse.body.data.reconnected).toBe(true);
+    expect(reconnectResponse.body.data.lobby.players).toHaveLength(4);
 });
 
 test("REST duplicate nickname icin 409 doner", async () => {

@@ -37,7 +37,12 @@ const drumPatternSchema = basePatternSchema
 const melodicStepSchema = z.union([
     z.null(),
     z.object({
-        note: z.string().min(1),
+        note: z
+            .string()
+            .regex(
+                /^[A-Ga-g](?:#|b)?[0-8]$/,
+                "Geçersiz nota. Örnekler: C3, F#4, Bb2."
+            ),
         velocity: z.number().min(0).max(1),
     })
 ])
@@ -94,7 +99,10 @@ function validatePattern(pattern){
 
 const patternValidators = {
     drums: validateDrumPattern,
-    bass: validateMelodicPattern
+    bass: validateMelodicPattern,
+    "chord-synth": validateMelodicPattern,
+    "lead-synth": validateMelodicPattern,
+    guitar: validateMelodicPattern
 }
 
 module.exports = {
