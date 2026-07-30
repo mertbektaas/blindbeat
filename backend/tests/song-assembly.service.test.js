@@ -126,7 +126,12 @@ describe("SongAssemblyService", () => {
             currentMatchId: 4
         });
 
-        expect(result).toBe(false);
+        expect(result).toMatchObject({
+            success: false,
+            error: {
+                code: "INSUFFICIENT_PATTERN_POOL"
+            }
+        });
         expect(tx.songVariant.create).not.toHaveBeenCalled();
         expect(tx.songVariantPattern.createMany).not.toHaveBeenCalled();
         expect(tx.pattern.updateMany).not.toHaveBeenCalled();

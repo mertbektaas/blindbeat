@@ -21,6 +21,12 @@ function createLobbyController({
                     nickname
                 });
 
+                roomRegistry?.initializeLobby({
+                    lobbyId: result.lobby.id,
+                    lobbyCode: result.lobby.code,
+                    hostPlayerId: result.player.id
+                });
+
                 const cookie = createPlayerSessionCookie(
                     result.identity.token
                 );
@@ -98,10 +104,11 @@ function createLobbyController({
         });
 
         if (identity && roomRegistry) {
-            roomRegistry.removePlayer(
-                identity.lobbyId,
-                identity.playerId
-            );
+            roomRegistry.removeLobbyPlayerState({
+                lobbyId: identity.lobbyId,
+                playerId: identity.playerId,
+                nextHostPlayerId: result.lobby?.players[0]?.id || null
+            });
         }
 
         if (identity && connectionRegistry) {
@@ -166,6 +173,15 @@ function createLobbyController({
                     lobbyId: result.lobby.id,
                     lobbyCode,
                     sessionId: result.session.id
+                });
+
+                await lobbyBroadcaster?.broadcastLobbyEvent({
+                    lobbyId: result.lobby.id,
+                    type: "lobby:session-started",
+                    changedPlayer: {
+                        nickname: identity.nickname,
+                        action: "session-started"
+                    }
                 });
 
                 res

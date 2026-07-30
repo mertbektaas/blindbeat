@@ -4,7 +4,8 @@ function createGameStateSnapshot(runtime, viewerPlayerId) {
             playerId: playerState.playerId,
             locked: playerState.locked,
             connected: playerState.connected,
-            ready: playerState.ready
+            ready: playerState.ready,
+            matchResultReady: runtime.matchResultReadyPlayerIds?.has(playerState.playerId) ?? false
         };
     });
 
@@ -22,8 +23,10 @@ function createGameStateSnapshot(runtime, viewerPlayerId) {
             ? runtime.sessionInstrumentCategories?.[runtime.currentInstrumentIndex] || null
             : null,
         bpm: runtime.bpm,
+        stepCount: runtime.stepCount,
         playbackLoops: runtime.playbackLoops,
         myLocked: runtime.players.get(viewerPlayerId)?.locked ?? false,
+        myMatchResultReady: runtime.matchResultReadyPlayerIds?.has(viewerPlayerId) ?? false,
         roundStartedAt: runtime.roundStartedAt
             ? runtime.roundStartedAt.toISOString()
             : null,
@@ -31,6 +34,7 @@ function createGameStateSnapshot(runtime, viewerPlayerId) {
             ? runtime.deadlineAt.toISOString()
             : null,
         variantOrder: runtime.variantOrder || [],
+        matchBuildError: runtime.matchBuildError ?? null,
         stateVersion: runtime.stateVersion,
         matchResult: runtime.matchResult
             ? {

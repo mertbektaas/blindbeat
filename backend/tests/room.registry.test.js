@@ -2,53 +2,70 @@ const {
     createRoomRegistry
 } = require("../src/realtime/room.registry");
 
-describe("RoomRegistry", () => {
-    test("yeni room oluşturur ve aynı roomu tekrar döndürür", () => {
+describe("RoomRegistry lobby state", () => {
+    test("kurucuyu host yapar ve oyunculara ortak başlangıç patterni verir", () => {
         const registry = createRoomRegistry();
 
-        const firstRoom = registry.getOrCreateRoom(16, "ABCD");
-        const secondRoom = registry.getOrCreateRoom(16, "ABCD");
+        registry.initializeLobby({
+            lobbyId: 16,
+            lobbyCode: "ABCD",
+            hostPlayerId: 24
+        });
 
-        expect(firstRoom).toBe(secondRoom);
-        expect(firstRoom.lobbyId).toBe(16);
-        expect(firstRoom.lobbyCode).toBe("ABCD");
-        expect(firstRoom.onlinePlayerIds.size).toBe(0);
+        const room = registry.ensureLobbyState({
+            lobbyId: 16,
+            lobbyCode: "ABCD",
+            players: [
+                { id: 24, nickname: "Mert" },
+                { id: 25, nickname: "Ada" }
+            ]
+        });
+
+        expect(room.hostPlayerId).toBe(24);
+        expect(room.lobbyConfig.stepCount).toBe(16);
+        expect(room.lobbyPatterns[24]).toHaveLength(16);
+        expect(room.lobbyPatterns[25]).toHaveLength(16);
     });
 
-    test("oyuncuyu rooma ekler ve duplicate oyuncu oluşturmaz", () => {
+    test("step sayısı değişince bütün patternleri aynı uzunluğa getirir", () => {
         const registry = createRoomRegistry();
+        const room = registry.getOrCreateRoom(16, "ABCD");
 
-        const room = registry.addPlayer(16, "ABCD", 24);
-        registry.addPlayer(16, "ABCD", 24);
+        room.lobbyPatterns[24] = [true, false, true];
+        room.lobbyPatterns[25] = [false, true];
 
-        expect(room.onlinePlayerIds.has(24)).toBe(true);
-        expect(room.onlinePlayerIds.size).toBe(1);
+        registry.updateLobbyConfig({
+            lobbyId: 16,
+            config: { stepCount: 8 }
+        });
+
+        expect(room.lobbyPatterns[24]).toEqual([
+            true, false, true, false, false, false, false, false
+        ]);
+        expect(room.lobbyPatterns[25]).toEqual([
+            false, true, false, false, false, false, false, false
+        ]);
     });
 
-    test("roomdaki oyuncuyu kaldırır", () => {
+    test("bilinçli olarak ayrılan oyuncunun patternini siler ve hostluğu devreder", () => {
         const registry = createRoomRegistry();
+        const room = registry.initializeLobby({
+            lobbyId: 16,
+            lobbyCode: "ABCD",
+            hostPlayerId: 24
+        });
 
-        registry.addPlayer(16, "ABCD", 24);
-        registry.addPlayer(16, "ABCD", 25);
+        room.lobbyPatterns[24] = [true, false];
+        room.lobbyPatterns[25] = [false, true];
 
-        const room = registry.removePlayer(16, 24);
+        registry.removeLobbyPlayerState({
+            lobbyId: 16,
+            playerId: 24,
+            nextHostPlayerId: 25
+        });
 
-        expect(room.onlinePlayerIds.has(24)).toBe(false);
-        expect(room.onlinePlayerIds.has(25)).toBe(true);
-    });
-
-    test("olmayan roomdan oyuncu kaldırılırsa undefined döner", () => {
-        const registry = createRoomRegistry();
-
-        expect(registry.removePlayer(99, 24)).toBeUndefined();
-    });
-
-    test("roomu tamamen siler", () => {
-        const registry = createRoomRegistry();
-
-        registry.getOrCreateRoom(16, "ABCD");
-        registry.deleteRoom(16);
-
-        expect(registry.getRoom(16)).toBeUndefined();
+        expect(room.lobbyPatterns[24]).toBeUndefined();
+        expect(room.lobbyPatterns[25]).toEqual([false, true]);
+        expect(room.hostPlayerId).toBe(25);
     });
 });

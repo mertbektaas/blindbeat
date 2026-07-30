@@ -27,7 +27,11 @@ function createRoundDeadlineScheduler({
                 const result = await roundFinalizer.finalizeRound({runtime, matchId: runtime.currentMatchId, now});
 
                 if(result.completed && result.runtime.phase === "NEXT_INSTRUMENT"){
-                    instrumentRoundManager.startRound({runtime, instrumentRoundSeconds: gameConfig.instrumentRoundSeconds, now});
+                    instrumentRoundManager.startRound({
+                        runtime,
+                        instrumentRoundSeconds: runtime.instrumentRoundSeconds ?? gameConfig.instrumentRoundSeconds,
+                        now
+                    });
                 }
 
                 if(result.completed && result.runtime.phase === "MATCH_BUILDING"){
@@ -36,7 +40,7 @@ function createRoundDeadlineScheduler({
                         matchId: runtime.currentMatchId,
                         instrumentIds: runtime.sessionInstrumentIds,
                         playerIds: [...runtime.players.keys()],
-                        variantCount: gameConfig.songVariantCount,
+                        variantCount: runtime.songVariantCount ?? gameConfig.songVariantCount,
                         currentMatchId: runtime.currentMatchId
                     });
 
@@ -45,10 +49,39 @@ function createRoundDeadlineScheduler({
                             runtime,
                             variants: buildResult.variants
                         });
+                    } else {
+                        runtime.matchBuildError = buildResult.error || {
+                            code: "MATCH_BUILD_FAILED",
+                            message: "Şarkı varyantları oluşturulamadı."
+                        };
+                        runtime.stateVersion++;
+                        console.error("MATCH_BUILD_FAILED", {
+                            sessionId: runtime.sessionId,
+                            matchId: runtime.currentMatchId,
+                            error: runtime.matchBuildError
+                        });
                     }
                 }
 
-                gameStateBroadcaster.broadcastGameState(runtime.sessionId);
+                await gameStateBroadcaster.broadcastGameState(runtime.sessionId);
+            }
+
+            catch (error) {
+                console.error("ROUND_DEADLINE_FLOW_ERROR", {
+                    sessionId: runtime.sessionId,
+                    matchId: runtime.currentMatchId,
+                    phase: runtime.phase,
+                    error
+                });
+
+                if (runtime.phase === "MATCH_BUILDING") {
+                    runtime.matchBuildError = {
+                        code: "MATCH_BUILD_FAILED",
+                        message: error.message || "Şarkı varyantları oluşturulurken hata oluştu."
+                    };
+                    runtime.stateVersion++;
+                    await gameStateBroadcaster.broadcastGameState(runtime.sessionId);
+                }
             }
 
             finally {

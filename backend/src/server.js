@@ -100,6 +100,9 @@ const {
   createPlaybackStartCoordinator
 } = require("./game/playback-start.coordinator.js");
 const {
+  createMatchResultReadiness
+} = require("./game/match-result.readiness.js");
+const {
   createDraftPatternManager
 } = require("./game/draft-pattern.js");
 const {
@@ -138,6 +141,7 @@ const sessionGameFlow = createSessionGameFlow({
 });
 
 const playbackReadiness = createPlaybackReadiness();
+const matchResultReadiness = createMatchResultReadiness();
 const playbackCompletion = createPlaybackCompletion({
   phaseStateMachine
 });
@@ -182,7 +186,8 @@ const lobbyService = createLobbyService({ prisma, identityRegistry });
 const sessionService = createSessionService({
   prisma,
   identityRegistry,
-  sessionRuntimeBootstrap
+  sessionRuntimeBootstrap,
+  instrumentRoundManager
 });
 
 const lobbyController = createLobbyController({
@@ -336,6 +341,7 @@ webSocketServer.on("connection", createConnectionHandler({
   playbackStartCoordinator,
   playbackPhaseManager,
   playbackCompletion,
+  matchResultReadiness,
   voteService,
   nextMatchCoordinator,
   ogRoundCoordinator,

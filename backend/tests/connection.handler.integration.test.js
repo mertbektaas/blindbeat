@@ -158,8 +158,10 @@ describe("WebSocket handshake", () => {
         expect(messages[1].type).toBe("lobby:snapshot");
         expect(messages[1].payload.players).toEqual([
             {
+                id: 24,
                 nickname: "Mert",
-                online: true
+                online: true,
+                ready: false
             }
         ]);
 

@@ -16,6 +16,17 @@ body {
   min-height: 100vh;
 }
 
+.game-fallback {
+  min-height: 100vh;
+  padding: 2rem;
+  background: #090a10;
+}
+
+.game-fallback-message {
+  margin: 0;
+  color: #b7becb;
+}
+
 button {
   border: 0;
   border-radius: 6px;
@@ -25,6 +36,197 @@ button {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+.playback-screen {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #2c313c;
+}
+
+.voting-screen,
+.session-result-screen {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #2c313c;
+}
+
+.vote-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.vote-options button.selected {
+  outline: 3px solid #f0c674;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+input {
+  width: 100%;
+  margin-top: 0.75rem;
+  border: 1px solid #3b4250;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  color: #f6f7f9;
+  background: #111318;
+  font: inherit;
+}
+
+.lobby-controls {
+  margin: 1rem 0;
+  padding: 1rem 0;
+  border-top: 1px solid #2c313c;
+  border-bottom: 1px solid #2c313c;
+}
+
+.lobby-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.instrument-round {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #2c313c;
+}
+
+.instrument-round-header,
+.instrument-round-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.instrument-round-header h2 {
+  margin: 0;
+  color: #a9f06b;
+  font-size: 1.1rem;
+  text-transform: capitalize;
+}
+
+.instrument-round-header p {
+  margin: 0.35rem 0 1rem;
+  color: #b7becb;
+  font-size: 0.85rem;
+}
+
+.step-grid,
+.melodic-grid {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0;
+}
+
+.step-row {
+  display: grid;
+  grid-template-columns: 4.5rem repeat(var(--step-count), minmax(2rem, 1fr));
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.step-label {
+  color: #b7becb;
+  font-size: 0.8rem;
+}
+
+.step-button {
+  min-width: 0;
+  padding: 0.55rem 0.2rem;
+  color: #b7becb;
+  background: #2c313c;
+  font-size: 0.75rem;
+}
+
+.step-button.active {
+  color: #111318;
+  background: #a9f06b;
+}
+
+.melodic-grid {
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+
+.melodic-step {
+  padding: 0.65rem;
+  border: 1px solid #2c313c;
+  border-radius: 6px;
+}
+
+.melodic-step span {
+  color: #b7becb;
+  font-size: 0.75rem;
+}
+
+.melodic-step input {
+  margin-top: 0.45rem;
+  padding: 0.45rem;
+}
+
+.note-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin-top: 0.55rem;
+}
+
+.note-button {
+  min-width: 0;
+  padding: 0.42rem 0.2rem;
+  color: #b7becb;
+  background: #2c313c;
+  font-size: 0.72rem;
+}
+
+.note-button.selected {
+  color: #111318;
+  background: #a9f06b;
+}
+
+.note-button.empty {
+  grid-column: span 2;
+}
+
+.instrument-round-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.playback-screen h2 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.variant-bar {
+  margin-top: 0.75rem;
+  color: #b7becb;
+}
+
+.variant-bar.active {
+  color: #a9f06b;
+}
+
+.variant-track {
+  height: 0.6rem;
+  margin-top: 0.35rem;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #2c313c;
+}
+
+.variant-fill {
+  height: 100%;
+  background: currentColor;
+  transition: width 80ms linear;
 }
 
 .page-shell {
@@ -68,4 +270,25 @@ h1 {
 
 .status-message.error {
   color: #ff8f8f;
+}
+
+.game-fallback {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  gap: 0.7rem;
+  padding: 2rem;
+  color: #f8f4f8;
+  background: #090a10;
+  text-align: center;
+}
+
+.game-fallback-message {
+  margin: 0;
+  color: #c8f46b;
+  font: 0.9rem/1.5 "DM Mono", ui-monospace, monospace;
+}
+
+.game-fallback-error .game-fallback-message {
+  color: #ff7599;
 }

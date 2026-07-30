@@ -58,8 +58,10 @@ describe("LobbyBroadcaster", () => {
         expect(message.stateVersion).toBe(1);
         expect(message.payload.players).toEqual([
             {
+                id: 24,
                 nickname: "Mert",
-                online: true
+                online: true,
+                ready: false
             }
         ]);
         expect(message.payload.changedPlayer).toEqual({

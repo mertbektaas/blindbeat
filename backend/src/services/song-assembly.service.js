@@ -45,11 +45,27 @@ function createSongAssemblyService({ prisma }) {
 
             const selection = patternPoolSelector.selectPatternsForVariants({patternsByInstrument: snapshot.patternsByInstrument, instrumentIds, playerIds, variantCount, currentMatchId,randomFn: Math.random});
 
-            if(!selection.success) return false;
+            if(!selection.success) {
+                return {
+                    success: false,
+                    error: selection.error || {
+                        code: "PATTERN_SELECTION_FAILED",
+                        message: "Şarkı varyantları için pattern seçilemedi."
+                    }
+                };
+            }
 
             const build = songVariantBuilder.buildSongVariants({selectedPatterns: selection.selectedPatterns, instrumentIds,variantCount});
 
-            if(!build.success) return false;
+            if(!build.success) {
+                return {
+                    success: false,
+                    error: build.error || {
+                        code: "SONG_VARIANT_BUILD_FAILED",
+                        message: "Şarkı varyantları oluşturulamadı."
+                    }
+                };
+            }
 
             for(const variant of build.variants){
                 const savedVariant = await songVariantRepository.createSongVariant({matchId, variantNo: variant.variantNo});

@@ -18,6 +18,7 @@ function createNextMatchCoordinator({
         runtime.currentMatchId = match.id;
         runtime.matchNumber = match.matchNumber;
         runtime.matchResult = null;
+        runtime.matchResultReadyPlayerIds = new Set();
         runtime.playbackStartAt = null;
         runtime.variantOrder = [];
         runtime.currentInstrumentIndex = 0;

@@ -88,13 +88,15 @@ describe("GameStateSnapshot", () => {
                 playerId: 1,
                 locked: false,
                 connected: true,
-                ready: true
+                ready: true,
+                matchResultReady: false
             },
             {
                 playerId: 2,
                 locked: true,
                 connected: true,
-                ready: true
+                ready: true,
+                matchResultReady: false
             }
         ]);
     });

@@ -33,7 +33,8 @@ const {
 function createSessionService({
     prisma,
     identityRegistry,
-    sessionRuntimeBootstrap
+    sessionRuntimeBootstrap,
+    instrumentRoundManager
 }) {
     return {
         async startSession({
@@ -141,12 +142,18 @@ function createSessionService({
 
             
 
-            sessionRuntimeBootstrap.createRuntimeForSession({
+            const runtime = sessionRuntimeBootstrap.createRuntimeForSession({
                 session: result.session,
                 playerIds: result.playerIds,
                 sessionInstruments: result.sessionInstruments,
                 instruments: result.instruments,
                 matchId: result.match.id,
+            });
+
+            instrumentRoundManager?.startRound({
+                runtime,
+                instrumentRoundSeconds: result.session.instrumentRoundSeconds,
+                now: new Date()
             });
 
             return result;

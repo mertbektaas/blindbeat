@@ -40,7 +40,9 @@ function createSessionRuntimeBootstrap({
             sessionInstrumentIds,
             matchId: matchId,
             stepCount: session.stepCount,
-            maxMatchCount: session.maxMatchCount
+            maxMatchCount: session.maxMatchCount,
+            instrumentRoundSeconds: session.instrumentRoundSeconds,
+            songVariantCount: session.songVariantCount
         };
 
         if (sessionInstrumentCodes.some(Boolean)) {

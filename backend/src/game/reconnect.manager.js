@@ -16,11 +16,12 @@ function createReconnectManager({
     function markDisconnected({ runtime, playerId }) {
         const playerState = getPlayerState(runtime, playerId);
         const disconnectedAt = new Date(now());
+        const reconnectSeconds = runtime.instrumentRoundSeconds ?? instrumentRoundSeconds;
 
         playerState.connected = false;
         playerState.reconnectCount += 1;
         playerState.reconnectDeadlineAt = new Date(
-            disconnectedAt.getTime() + instrumentRoundSeconds * 1000
+            disconnectedAt.getTime() + reconnectSeconds * 1000
         );
 
         if (

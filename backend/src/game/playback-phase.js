@@ -34,6 +34,7 @@ function createPlaybackPhaseManager({
         phaseStateMachine.transition(runtime, "PLAYBACK");
 
         runtime.variantOrder = createRandomVariantOrder(variants);
+        runtime.matchBuildError = null;
 
         runtime.playbackStartAt = null;
         playbackReadiness.reset(runtime);

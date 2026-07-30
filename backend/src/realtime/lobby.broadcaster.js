@@ -22,12 +22,23 @@ function createLobbyBroadcaster({
     }
 
     function createSnapshotPayload(lobby, room) {
+        roomRegistry.ensureLobbyState({
+            lobbyId: room.lobbyId,
+            lobbyCode: lobby.code,
+            players: lobby.players
+        });
+
         return {
             code: lobby.code,
             status: lobby.status,
+            hostPlayerId: room.hostPlayerId,
+            config: room.lobbyConfig,
+            patterns: room.lobbyPatterns,
             players: lobby.players.map((player) => ({
+                id: player.id,
                 nickname: player.nickname,
-                online: room.onlinePlayerIds.has(player.id)
+                online: room.onlinePlayerIds.has(player.id),
+                ready: room.readyPlayerIds.has(player.id)
             }))
         };
     }
