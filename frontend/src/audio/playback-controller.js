@@ -77,8 +77,37 @@ function createPlaybackController({ playbackScheduler }) {
         playbackScheduler.stop();
     }
 
+    // Voting phase'inde kullanıcı kendi tarayıcısında tek bir
+    // variant'ı tekrar dinlemek istediğinde çağrılır. Backend'le
+    // iletişime girmez; sadece local transport'u o variant'ı
+    // çalacak şekilde yeniden planlar.
+    function replaySingleVariant({ variant, instrumentsById, timing }) {
+        if (!variant) {
+            throw new Error("Replay icin variant bulunamadi.");
+        }
+
+        if (!timing) {
+            throw new Error("Replay icin timing bilgisi gerekli.");
+        }
+
+        playbackScheduler.stop();
+
+        const scheduledVariant = playbackScheduler.scheduleVariant({
+            variant,
+            instrumentsById,
+            startAt: 0,
+            timing,
+            playbackLoops: timing.playbackLoops
+        });
+
+        playbackScheduler.start();
+
+        return scheduledVariant;
+    }
+
     return {
         handlePlaybackStart,
+        replaySingleVariant,
         stop
     };
 }

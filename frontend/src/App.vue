@@ -824,6 +824,14 @@ function sendVote(songVariantId) {
   }
 }
 
+function handleReplayVariant(songVariantId) {
+  try {
+    playbackFlow?.replayVariant(songVariantId);
+  } catch (error) {
+    gameStatus.value = `Replay başlatılamadı: ${error.message}`;
+  }
+}
+
 function continueAfterMatchResult() {
   try {
     playbackFlow?.sendMatchContinue();
@@ -1074,6 +1082,7 @@ function stopAudio() {
     :game-state="gameState"
     @intro-ready="handlePlaybackIntroReady"
     @send-vote="sendVote"
+    @replay-variant="handleReplayVariant"
   />
 
   <LeaderboardUpdatePage

@@ -1,6 +1,7 @@
 import { fetchMatchPlayback } from "../api/playback.api.js";
 import { createPlaybackController } from "./playback-controller.js";
 import { createGameSessionClient } from "../realtime/game-session.client.js";
+import { calculatePlaybackTiming } from "./timing.js";
 
 function createPlaybackFlow({
     apiUrl,
@@ -115,6 +116,69 @@ function createPlaybackFlow({
         sessionClient.close();
     }
 
+    // Voting phase'inde kullanıcı kendi tarayıcısında tek bir
+    // şarkıyı tekrar dinlemek istediğinde. Backend'e haber vermez,
+    // sadece local transport'u planlar. Mevcut playback ile
+    // çakışmasın diye transport zaten durmuşsa (oyun oynanırken)
+    // veya başka bir replay çalıyorsa erken çıkar.
+    function replayVariant(songVariantId) {
+        if (!playbackStore.audioReady) {
+            throw new Error("Audio is not ready for replay.");
+        }
+
+        const variants = playbackStore.variants || [];
+        const variant = variants.find((entry) => (
+            (entry.id ?? entry.variantNo) === songVariantId
+        ));
+
+        if (!variant) {
+            throw new Error(
+                `Replay icin variant bulunamadi: ${songVariantId}`
+            );
+        }
+
+        const timing = calculatePlaybackTiming({
+            bpm: playbackStore.bpm,
+            stepCount: playbackStore.stepCount,
+            playbackLoops: playbackStore.playbackLoops
+        });
+
+        const instrumentsById = getInstrumentsById(variants);
+
+        // Replay loop sayisini 1 loop ile sinirla ki uzun surmesin.
+        // Kullanici sadece "tekrar dinlemek" istiyor, tum oyun
+        // boyu kadar dinlemek degil.
+        const replayTiming = {
+            ...timing,
+            playbackLoops: 1,
+            totalDurationSeconds: timing.loopDurationSeconds
+        };
+
+        playbackStore.setSongVariantPlaying(
+            (variant.id ?? variant.variantNo)
+        );
+
+        try {
+            playbackController.replaySingleVariant({
+                variant,
+                instrumentsById,
+                timing: replayTiming
+            });
+        } catch (error) {
+            playbackStore.setSongVariantPlaying(null);
+            throw error;
+        }
+
+        // Replay loop tamamlaninca transport'u durdur ve
+        // songVariantPlaying bayragini temizle ki voting butonlari
+        // normal davranmaya devam etsin.
+        const totalReplayMs = replayTiming.totalDurationSeconds * 1000;
+        window.setTimeout(() => {
+            audioEngine.stop();
+            playbackStore.setSongVariantPlaying(null);
+        }, totalReplayMs + 200);
+    }
+
     return {
         loadMatchPlayback,
         prepareAudio,
@@ -126,6 +190,7 @@ function createPlaybackFlow({
         sendMatchContinue,
         sendDraftUpdate,
         sendPatternLock,
+        replayVariant,
         stop
     };
 }
