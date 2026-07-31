@@ -8,6 +8,8 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(["return-to-lobby"]);
+
 const palette = ["#c8f46b", "#c99dff", "#ff769b", "#6bb5f4", "#f5ba58"];
 const phase = ref("intro");
 const scoreProgress = ref(0);
@@ -29,6 +31,7 @@ const ranked = computed(() => {
 });
 
 const isTied = computed(() => Boolean(props.result?.tied));
+const animationComplete = computed(() => scoreProgress.value >= 1);
 
 function initials(name = "?") {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -58,6 +61,10 @@ function reveal() {
       }
     }, 32);
   }, 1800);
+}
+
+function onReturnToLobby() {
+  emit("return-to-lobby");
 }
 
 onMounted(reveal);
@@ -113,7 +120,7 @@ onBeforeUnmount(clearTimers);
           v-for="(entry, index) in ranked.slice(3)"
           :key="entry.playerId"
           :style="{
-            '--player-color': entry.color,
+            '--player-color': palette[index % palette.length],
             '--entry-delay': `${index * 120}ms`
           }"
         >
@@ -123,6 +130,14 @@ onBeforeUnmount(clearTimers);
           <b>{{ displayedScore(entry.totalScore) }}<small>puan</small></b>
         </article>
       </section>
+
+      <footer v-if="animationComplete" class="result-footer">
+        <button
+          type="button"
+          class="return-to-lobby"
+          @click="onReturnToLobby"
+        >Lobiye Dön</button>
+      </footer>
     </section>
   </main>
 </template>
@@ -410,6 +425,37 @@ onBeforeUnmount(clearTimers);
 .result-empty {
   margin-top: 2rem;
   color: var(--muted);
+}
+
+.result-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+  animation: footer-arrive .6s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.return-to-lobby {
+  min-width: 16rem;
+  min-height: 3.4rem;
+  padding: 0 1.6rem;
+  border: 1px solid var(--lime);
+  color: #10111f;
+  background: var(--lime);
+  font: 700 .9rem "DM Mono", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.return-to-lobby:hover {
+  transform: translate(2px, 2px);
+  box-shadow: -2px -2px 0 var(--ink);
+}
+
+@keyframes footer-arrive {
+  from { opacity: 0; transform: translateY(1rem); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 760px) {

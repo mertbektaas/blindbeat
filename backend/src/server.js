@@ -223,6 +223,8 @@ const leaderboardController = createLeaderboardController({
   identityRegistry
 });
 const leaderboardRoutes = createLeaderboardRoutes({ leaderboardController });
+const { createInstrumentController } = require("./controllers/instrument.controller");
+const { createInstrumentRoutes } = require("./routes/instrument.routes");
 const { createVoteRepository } = require("./repositories/vote.repository");
 const voteRepository = createVoteRepository(prisma);
 
@@ -269,6 +271,8 @@ const roundCompletion = createRoundCompletion();
 const roundTransition = createRoundTransition({ phaseStateMachine });
 
 const instrumentRepository = createInstrumentRepository(prisma);
+const instrumentController = createInstrumentController({ instrumentRepository });
+const instrumentRoutes = createInstrumentRoutes({ instrumentController });
 
 const roundFinalizer = createRoundFinalizer({
   roundCompletion,
@@ -335,7 +339,8 @@ const app = createApp({
   frontendOrigin,
   lobbyRoutes,
   playbackRoutes,
-  leaderboardRoutes
+  leaderboardRoutes,
+  instrumentRoutes
 });
 
 if (process.env.NODE_ENV === "production" || process.env.TRUST_PROXY === "true") {
@@ -358,6 +363,7 @@ webSocketServer.on("connection", createConnectionHandler({
   connectionRegistry,
   roomRegistry,
   lobbyBroadcaster,
+  lobbyService,
   gameStateBroadcaster,
   runtimeRegistry,
   reconnectManager,

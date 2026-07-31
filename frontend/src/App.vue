@@ -45,8 +45,11 @@ const lobbyGameConfig = ref({
   bpm: 80,
   instrumentRoundSeconds: 30,
   stepCount: 16,
-  maxMatchCount: 3
+  maxMatchCount: 3,
+  instrumentCodes: ["kick"]
 });
+
+const availableInstruments = ref([]);
 
 let audioEngine;
 let playbackScheduler;
@@ -151,7 +154,35 @@ async function checkBackend() {
   }
 }
 
-onMounted(checkBackend);
+onMounted(async () => {
+  // SESSION_RESULT sonrasi "Lobiye Don" akisinda sayfa yenilenmis
+  // olabilir. sessionStorage'da bekleyen lobby verisi varsa
+  // otomatik olarak lobby ekranina gec.
+  const pendingLobbyRaw = window.sessionStorage.getItem("pendingLobbyData");
+
+  if (pendingLobbyRaw) {
+    try {
+      const pendingLobby = JSON.parse(pendingLobbyRaw);
+      lobbyData.value = pendingLobby;
+      lobbyCode.value = pendingLobby.lobby.code;
+      enterLobby(pendingLobby);
+    } catch (error) {
+      gameStatus.value = "Bekleyen lobi verisi okunamadi.";
+    }
+
+    window.sessionStorage.removeItem("pendingLobbyData");
+  }
+
+  // Enstruman listesini yukle
+  try {
+    const response = await axios.get(`${apiUrl}/instruments`, { withCredentials: true });
+    availableInstruments.value = response.data.data.instruments || [];
+  } catch (error) {
+    console.error("Enstruman listesi alinamadi:", error);
+  }
+
+  void checkBackend();
+});
 
 watch(lobbyPlayers, (players) => {
   syncLobbyPatterns(players);
@@ -473,6 +504,36 @@ function enterLobby(result) {
   currentScreen.value = "lobby";
   connectLobbyRealtime();
   void restartLobbyMusic();
+}
+
+async function handleReturnToLobby() {
+  // SESSION_RESULT ekranindan lobiye donus. Eski lobby CLOSED yapilir
+  // ve oyuncu icin yeni bir lobby olusturulur (veya ayni eski lobiden
+  // donen diger oyuncularla paylasilan yeni lobiye eklenir).
+  // Yeni token cookie olarak set edilir, sayfa yenilenir.
+  try {
+    const response = await axios.post(
+      `${apiUrl}/lobbies/rotate`,
+      {},
+      { withCredentials: true }
+    );
+
+    lobbyData.value = response.data.data;
+    lobbyCode.value = lobbyData.value.lobby.code;
+    gameStatus.value = `Yeni lobiye gecildi: ${lobbyCode.value}`;
+
+    // Sayfa yenilendikten sonra otomatik olarak lobby ekranina
+    // gecmek icin lobby data ve flag'i sessionStorage'a birak.
+    // App.vue onMounted bu degerleri okur ve lobby ekranina yonlendirir.
+    window.sessionStorage.setItem(
+      "pendingLobbyData",
+      JSON.stringify(response.data.data)
+    );
+    window.location.reload();
+  } catch (error) {
+    gameStatus.value = error.response?.data?.error?.message
+      || "Lobiye donulurken hata olustu.";
+  }
 }
 
 function toggleLobbyReady() {
@@ -800,7 +861,9 @@ async function startSession() {
         instrumentRoundSeconds: lobbyGameConfig.value.instrumentRoundSeconds,
         playbackLoops: 5,
         songVariantCount: 3,
-        instrumentCodes: ["kick", "bass", "chord-synth"]
+        instrumentCodes: lobbyGameConfig.value.instrumentCodes?.length
+          ? lobbyGameConfig.value.instrumentCodes
+          : ["kick"]
       },
       { withCredentials: true }
     );
@@ -1058,6 +1121,7 @@ function stopAudio() {
     :is-ready="lobbyReady"
     :is-host="lobbyIsHost"
     :game-config="lobbyGameConfig"
+    :available-instruments="availableInstruments"
     :connection-status="lobbyConnectionStatus"
     :audio-status="audioStatus"
     :leaving="lobbyLeaving"
@@ -1107,6 +1171,7 @@ function stopAudio() {
     v-if="currentScreen === 'game' && gameState?.phase === 'SESSION_RESULT'
 "
     :result="gameState?.sessionResult || votingStore.sessionResult"
+    @return-to-lobby="handleReturnToLobby"
   />
 
   <main v-else-if="currentScreen === 'game' && !['MATCH_STARTING', 'INSTRUMENT_ROUND', 'PLAYBACK', 'VOTING', 'MATCH_RESULT', 'SESSION_RESULT'].includes(gameState?.phase)" class="game-fallback">

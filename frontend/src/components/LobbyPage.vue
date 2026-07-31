@@ -32,6 +32,10 @@ const props = defineProps({
     type: Object,
     required: true
   },
+  availableInstruments: {
+    type: Array,
+    default: () => []
+  },
   connectionStatus: {
     type: String,
     default: "Bağlanıyor..."
@@ -43,7 +47,7 @@ const props = defineProps({
   leaving: Boolean
 });
 
-defineEmits(["toggle-ready", "toggle-step", "config-change", "leave-lobby"]);
+const emit = defineEmits(["toggle-ready", "toggle-step", "config-change", "leave-lobby"]);
 
 const activePlayers = computed(() => props.players.filter((_, index) => (
   props.patterns[index]?.[props.currentStep]
@@ -53,6 +57,19 @@ function patternStyle(pattern) {
   return {
     gridTemplateColumns: `repeat(${pattern.length}, minmax(1rem, 1fr))`
   };
+}
+
+function toggleInstrument(code) {
+  const currentCodes = props.gameConfig.instrumentCodes || [];
+  const isSelected = currentCodes.includes(code);
+  const newCodes = isSelected
+    ? currentCodes.filter(c => c !== code)
+    : [...currentCodes, code];
+
+  // Max 6 enstruman siniri
+  if (newCodes.length > 6) return;
+
+  emit('config-change', { key: 'instrumentCodes', value: newCodes });
 }
 </script>
 
@@ -150,6 +167,30 @@ function patternStyle(pattern) {
             <b>Maç sayısı</b>
           </label>
         </div>
+
+        <div class="instrument-selector">
+          <div class="instrument-header">
+            <h3>Enstrümanlar</h3>
+            <span class="instrument-count">{{ gameConfig.instrumentCodes?.length || 0 }} / 6 seçili</span>
+          </div>
+          <div class="instrument-grid">
+            <button
+              v-for="instrument in availableInstruments"
+              :key="instrument.code"
+              type="button"
+              class="instrument-chip"
+              :class="{ selected: gameConfig.instrumentCodes?.includes(instrument.code) }"
+              :disabled="!isHost || (
+                !gameConfig.instrumentCodes?.includes(instrument.code) &&
+                (gameConfig.instrumentCodes?.length || 0) >= 6
+              )"
+              @click="toggleInstrument(instrument.code)"
+            >
+              <span class="instrument-name">{{ instrument.name }}</span>
+              <span class="instrument-category">{{ instrument.category }}</span>
+            </button>
+          </div>
+        </div>
       </section>
     </section>
   </main>
@@ -174,5 +215,6 @@ function patternStyle(pattern) {
 .game-config-lab { max-width: 1100px; margin: 3.5rem auto 0; padding: 1.25rem 0 0; border-top: 1px solid var(--line); }.config-lab-header { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; }.config-lab-header h2 { margin: 0; font-size: 1.65rem; }.config-lab-header > span { color: var(--muted); font-family: "DM Mono", monospace; font-size: 0.68rem; }.config-fader-panel { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin-top: 1.35rem; padding: 1rem; border: 1px solid #403557; border-radius: 8px; background: linear-gradient(120deg, #141226, #1c1325); }.fader-control { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: .7rem; min-width: 0; padding: .9rem; border: 1px solid #4e4062; border-radius: 5px; background: #0d0d18; cursor: pointer; }.fader-control > span { grid-row: span 2; display: grid; width: 2.9rem; min-height: 2.9rem; place-content: center; border: 1px solid #bf73d7; border-radius: 50%; color: #f5eaf7; background: #39214b; text-align: center; font-family: "DM Mono", monospace; font-size: .9rem; }.fader-control small { margin-top: -.15rem; color: #d1a8df; font-size: .56rem; }.fader-control input { width: 100%; accent-color: #c993ff; cursor: ew-resize; }.fader-control input:disabled { cursor: not-allowed; opacity: .45; }.fader-control b { color: var(--muted); font-family: "DM Mono", monospace; font-size: .62rem; font-weight: 400; }
 @keyframes jam-frame-hit { 0% { opacity: 0.88; } 100% { opacity: 0; } } @keyframes jam-step-hit { 0% { transform: scale(1.12); } 100% { transform: scale(1); } }
 .bpm-control { grid-template-columns: 1fr; }.number-stepper { display: grid; grid-template-columns: 2.9rem minmax(0, 1fr) 2.9rem; gap: .4rem; }.number-stepper button { border: 1px solid #b9285b; border-radius: 5px; color: #ff7aa4; background: #351021; font-family: "DM Mono", monospace; font-size: 1.45rem; font-weight: 700; line-height: 1; cursor: pointer; }.number-stepper button:hover:not(:disabled) { color: #fff2f6; background: #8b1e4a; }.number-stepper button:disabled { cursor: not-allowed; opacity: .36; }.bpm-input { min-width: 0; min-height: 2.9rem; border: 1px solid #bf73d7; border-radius: 5px; padding: 0 .7rem; color: #f5eaf7; background: #21152c; font-family: "DM Mono", monospace; font-size: 1rem; text-align: center; cursor: text !important; }.bpm-input:focus { outline: 2px solid #c993ff; outline-offset: 2px; }.bpm-input:disabled { cursor: not-allowed !important; }
+.instrument-selector { max-width: 1100px; margin: 1.5rem auto 0; padding: 1rem; border: 1px solid #403557; border-radius: 8px; background: linear-gradient(120deg, #141226, #1c1325); }.instrument-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }.instrument-header h3 { margin: 0; font-size: 1.1rem; color: var(--ink); }.instrument-count { color: var(--muted); font-family: "DM Mono", monospace; font-size: .72rem; }.instrument-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .6rem; }.instrument-chip { display: flex; flex-direction: column; align-items: flex-start; padding: .7rem .9rem; border: 1px solid #4e4062; border-radius: 6px; background: #0d0d18; color: var(--muted); font-family: inherit; font-size: .85rem; cursor: pointer; transition: all .2s ease; text-align: left; }.instrument-chip:hover:not(:disabled) { border-color: #c993ff; background: #1a1428; }.instrument-chip.selected { border-color: var(--ready); background: #1a2814; color: var(--ink); }.instrument-chip:disabled { cursor: not-allowed; opacity: .4; }.instrument-name { font-weight: 600; margin-bottom: .2rem; }.instrument-category { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 @media (max-width: 760px) { .layout-shell { padding: 1rem 1rem 6rem; }.jam-header { grid-template-columns: 1fr auto; }.jam-room-code { display: none; }.jam-title { margin-top: 4rem; }.jam-grid { gap: 0.8rem; overflow-x: auto; padding: 0.8rem 1rem 1.2rem; margin-right: -1rem; margin-left: -1rem; }.jam-row { grid-template-columns: 7rem minmax(370px, 1fr) 3.6rem; gap: 0.7rem; min-width: 620px; min-height: 4.7rem; }.jam-row-1, .jam-row-2, .jam-row-3, .jam-row-4 { transform: none; }.jam-steps { gap: 0.25rem; }.jam-controls { gap: 1rem; }.game-config-lab { margin-top: 2.5rem; }.config-lab-header { align-items: start; flex-direction: column; }.config-fader-panel { grid-template-columns: 1fr; } }
 </style>

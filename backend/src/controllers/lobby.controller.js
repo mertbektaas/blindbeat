@@ -168,7 +168,7 @@ function createLobbyController({
                     identity,
                     config
                 });
-                
+
                 roomRegistry.setActiveSession({
                     lobbyId: result.lobby.id,
                     lobbyCode,
@@ -187,6 +187,56 @@ function createLobbyController({
                 res
                     .status(201)
                     .json(success(result, req.requestId));
+            } catch (error) {
+                next(error);
+            }
+        },
+
+        // SESSION_RESULT ekranindan lobiye donus. Eski lobby CLOSED
+        // yapilir, oyuncu icin yeni bir lobby olusturulur (veya ayni
+        // eski lobiden donen diger oyuncularla paylasilan yeni lobiye
+        // eklenir). Yeni token cookie olarak set edilir.
+        async rotateLobby(req, res, next) {
+            try {
+                const token = readPlayerSessionToken(
+                    req.headers.cookie
+                );
+
+                const identity = identityRegistry.get(token);
+
+                if (!identity) {
+                    return res
+                        .status(401)
+                        .json({
+                            success: false,
+                            error: {
+                                code: "IDENTITY_NOT_FOUND",
+                                message: "Lobiye donmek icin kimlik bulunamadi."
+                            },
+                            requestId: req.requestId
+                        });
+                }
+
+                const result = await lobbyService.rotateLobby({
+                    oldLobbyId: identity.lobbyId,
+                    playerId: identity.playerId,
+                    nickname: identity.nickname
+                });
+
+                // Eski identity'yi sil ki yeni cookie ile eski token
+                // artik gecerli olmasin.
+                identityRegistry.delete(token);
+
+                const cookie = createPlayerSessionCookie(
+                    result.identity.token
+                );
+
+                const { identity: newIdentity, ...publicResult } = result;
+
+                res
+                    .status(200)
+                    .setHeader("Set-Cookie", [cookie])
+                    .json(success(publicResult, req.requestId));
             } catch (error) {
                 next(error);
             }

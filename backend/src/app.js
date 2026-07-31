@@ -31,7 +31,8 @@ function createApp({
   staticDir = process.env.STATIC_DIR || null,
   lobbyRoutes = express.Router(),
   playbackRoutes = express.Router(),
-  leaderboardRoutes = express.Router()
+  leaderboardRoutes = express.Router(),
+  instrumentRoutes = express.Router()
 }) {
   const app = express();
   const isAllowedOrigin = createAllowedOrigins(frontendOrigin);
@@ -66,6 +67,7 @@ function createApp({
   app.use(`${apiPrefix}/lobbies`, lobbyRoutes);
   app.use(`${apiPrefix}/matches`, playbackRoutes);
   app.use(`${apiPrefix}/matches`, leaderboardRoutes);
+  app.use(`${apiPrefix}/instruments`, instrumentRoutes);
 
   if (staticDir) {
     app.use(express.static(staticDir, {

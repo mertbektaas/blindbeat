@@ -76,6 +76,12 @@ function createSessionService({
 
                     if(lobby.players.length < gameConfig.minPlayers) { throw minPlayersNotReached(lobby.players.length, gameConfig.minPlayers)}
 
+                    // Fairness kurali: 3 x enstruman sayisi >= oyuncu sayisi
+                    // Her oyuncunun en az bir song variant'ta temsil edilmesi icin
+                    if (sessionConfig.instrumentCodes.length * 3 < lobby.players.length) {
+                        throw invalidSessionConfig(`Yetersiz enstruman sayisi. En az ${Math.ceil(lobby.players.length / 3)} enstruman gerekli.`);
+                    }
+
                     for (const code of sessionConfig.instrumentCodes) {
                         const instrument = await instrumentRepository.findByCode(code);
 

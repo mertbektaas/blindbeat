@@ -294,12 +294,58 @@ function createConnectionHandler({
                     bpm: { min: 60, max: 160, step: 5 },
                     instrumentRoundSeconds: { min: 15, max: 60, step: 5 },
                     stepCount: { min: 8, max: 32, step: 8 },
-                    maxMatchCount: { min: 1, max: 5, step: 1 }
+                    maxMatchCount: { min: 1, max: 5, step: 1 },
+                    instrumentCodes: null
                 };
                 const rule = allowedConfig[key];
 
+                if (!rule && key !== "instrumentCodes") {
+                    socket.send(JSON.stringify({
+                        type: "error",
+                        requestId: message.requestId,
+                        payload: {
+                            code: "INVALID_LOBBY_CONFIG",
+                            message: "Lobi ayarı geçersiz."
+                        }
+                    }));
+                    return;
+                }
+
+                if (key === "instrumentCodes") {
+                    if (
+                        !Array.isArray(value) ||
+                        value.length < 1 ||
+                        value.length > 6 ||
+                        new Set(value).size !== value.length
+                    ) {
+                        socket.send(JSON.stringify({
+                            type: "error",
+                            requestId: message.requestId,
+                            payload: {
+                                code: "INVALID_LOBBY_CONFIG",
+                                message: "Enstrüman seçimi geçersiz."
+                            }
+                        }));
+                        return;
+                    }
+
+                    roomRegistry.updateLobbyConfig({
+                        lobbyId: identity.lobbyId,
+                        config: { [key]: value }
+                    });
+
+                    await lobbyBroadcaster?.broadcastLobbyEvent({
+                        lobbyId: identity.lobbyId,
+                        type: "lobby:config-updated",
+                        changedPlayer: {
+                            nickname: identity.nickname,
+                            action: "config-updated"
+                        }
+                    });
+                    return;
+                }
+
                 if (
-                    !rule ||
                     !Number.isInteger(value) ||
                     value < rule.min ||
                     value > rule.max ||

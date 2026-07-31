@@ -21,8 +21,13 @@ function createLobbyRoutes({
     );
 
     router.post(
-    "/:lobbyCode/sessions",
-    lobbyController.startSession
+        "/:lobbyCode/sessions",
+        lobbyController.startSession
+    );
+
+    router.post(
+        "/rotate",
+        lobbyController.rotateLobby
     );
 
     return router;

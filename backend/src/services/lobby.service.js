@@ -24,6 +24,10 @@ function createLobbyService({
     identityRegistry,
     generateLobbyCode = defaultGenerateLobbyCode
 }) {
+    // Eski lobbyId -> yeni lobbyCode eslesmesi. Ayni eski lobiden
+    // gelen oyuncular hep ayni yeni lobiye yonlendirilir.
+    const lobbyRotations = new Map();
+
     return {
         async createLobby({ nickname }) {
             const lobbyCode = generateLobbyCode();
@@ -171,7 +175,7 @@ function createLobbyService({
                 }
 
                 if(!identity ||
-                    identity.lobbyId !== lobby.id || 
+                    identity.lobbyId !== lobby.id ||
                     !lobby.players.some(player => player.id === identity.playerId)
                 ){
                     throw identityNotFound();
@@ -207,6 +211,73 @@ function createLobbyService({
             await identityRegistry.delete(token);
 
             return result;
+        },
+        // SESSION_RESULT ekranindan lobiye donus akisi. Eski lobby
+        // CLOSED duruma getirilir, oyuncu icin yeni bir lobby olusturulur
+        // ve oyuncu oraya eklenir. Ayni eski lobiden donen diger
+        // oyuncular da ayni yeni lobiye yonlendirilir (lobbyRotations
+        // Map ile takip edilir).
+        async rotateLobby({
+            oldLobbyId,
+            playerId,
+            nickname
+        }) {
+            // Ayni eski lobiden daha once donus yapildiysa, o lobiye
+            // katil. Aksi halde yeni bir lobi olustur ve eslesmeyi kaydet.
+            if (lobbyRotations.has(oldLobbyId)) {
+                const existingLobbyCode = lobbyRotations.get(oldLobbyId);
+                return await this.joinLobby({
+                    lobbyCode: existingLobbyCode,
+                    nickname
+                });
+            }
+
+            const newLobbyCode = generateLobbyCode();
+
+            const result = await prisma.$transaction(async (tx) => {
+                const lobbyRepository = createLobbyRepository(tx);
+                const playerRepository = createPlayerRepository(tx);
+
+                // Eski lobby'yi CLOSED yap (yeni oyuncu kabul etmesin)
+                await lobbyRepository.updateStatus(oldLobbyId, LobbyStatus.CLOSED);
+
+                // Yeni lobby olustur
+                const newLobby = await lobbyRepository.createLobby(
+                    newLobbyCode,
+                    LobbyStatus.OPEN
+                );
+
+                // Oyuncuyu yeni lobiye ekle
+                const newPlayer = await playerRepository.createPlayer({
+                    nickname: nickname,
+                    lobbyId: newLobby.id
+                });
+
+                const updatedLobby = await lobbyRepository.findByCodeWithPlayers(
+                    newLobbyCode
+                );
+
+                return {
+                    lobby: updatedLobby,
+                    player: newPlayer
+                };
+            });
+
+            lobbyRotations.set(oldLobbyId, newLobbyCode);
+
+            const { lobby, player } = result;
+
+            const identity = identityRegistry.create({
+                playerId: player.id,
+                lobbyId: lobby.id,
+                nickname: player.nickname
+            });
+
+            return {
+                lobby,
+                player,
+                identity
+            };
         }
             };
 }
