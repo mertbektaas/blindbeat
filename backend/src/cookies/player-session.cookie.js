@@ -5,15 +5,24 @@ const {
 
 const PLAYER_SESSION_COOKIE = "blindbeat_player_session";
 
-function createPlayerSessionCookie(token) {
-    return serialize(
-        PLAYER_SESSION_COOKIE, 
-        token, {
+function getDefaultCookieConfig() {
+    const isProduction = process.env.NODE_ENV === "production";
+
+    return {
         httpOnly: true,
-        sameSite: "lax",
-        secure:false,
-        path: "/",
-    });
+        sameSite: isProduction ? "none" : "lax",
+        secure: isProduction,
+        path: "/"
+    };
+}
+
+function createPlayerSessionCookie(token, options = {}) {
+    const config = {
+        ...getDefaultCookieConfig(),
+        ...options
+    };
+
+    return serialize(PLAYER_SESSION_COOKIE, token, config);
 }
 
 function readPlayerSessionToken(cookieHeader) {
@@ -27,23 +36,20 @@ function readPlayerSessionToken(cookieHeader) {
 
 }
 
-function clearPlayerSessionCookie() {
-    // aynı cookie adını kullan
-    // maxAge: 0 ile silinecek cookie üret
-    return serialize(
-        PLAYER_SESSION_COOKIE, 
-        "", {
-        httpOnly: true,
-        sameSite: "lax",
-        secure:false,
-        path: "/",
+function clearPlayerSessionCookie(options = {}) {
+    const config = {
+        ...getDefaultCookieConfig(),
+        ...options,
         maxAge: 0
-    });
+    };
+
+    return serialize(PLAYER_SESSION_COOKIE, "", config);
 }
 
 module.exports = {
     PLAYER_SESSION_COOKIE,
     createPlayerSessionCookie,
     readPlayerSessionToken,
-    clearPlayerSessionCookie
+    clearPlayerSessionCookie,
+    getDefaultCookieConfig
 };

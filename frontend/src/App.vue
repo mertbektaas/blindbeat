@@ -54,7 +54,7 @@ let progressTracker;
 let playbackFlow;
 let lastPlaybackReadyMatchKey = null;
 let lastMatchNumber = null;
-const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:3000/ws";
 let lobbySocket;
 const lobbyVisualTimers = new Set();
@@ -406,7 +406,7 @@ async function prepareLobbyAudioFromGesture() {
   await audioEngine.resume();
 }
 
-function applyLobbySnapshot(snapshot) {
+    function applyLobbySnapshot(snapshot) {
   lobbySnapshot.value = {
     ...lobbySnapshot.value,
     ...snapshot,
@@ -669,6 +669,7 @@ async function connectToGame() {
       await prepareAudio();
     } catch (error) {
       gameStatus.value = "Ses sistemi hazırlanamadı.";
+      console.error(error);
       return;
     }
   }
@@ -1093,11 +1094,13 @@ function stopAudio() {
     </p>
   </main>
 
-  <main v-else-if="currentScreen === 'game' && gameState?.phase === 'SESSION_RESULT'" class="game-fallback">
-    <SessionResultScreen v-if="gameState?.phase === 'SESSION_RESULT'" :result="votingStore.sessionResult" />
-  </main>
+  <SessionResultScreen
+    v-if="currentScreen === 'game' && gameState?.phase === 'SESSION_RESULT'
+"
+    :result="gameState?.sessionResult || votingStore.sessionResult"
+  />
 
-  <main v-else-if="currentScreen === 'game' && !['MATCH_STARTING', 'INSTRUMENT_ROUND', 'PLAYBACK', 'VOTING', 'MATCH_RESULT'].includes(gameState?.phase)" class="game-fallback">
+  <main v-else-if="currentScreen === 'game' && !['MATCH_STARTING', 'INSTRUMENT_ROUND', 'PLAYBACK', 'VOTING', 'MATCH_RESULT', 'SESSION_RESULT'].includes(gameState?.phase)" class="game-fallback">
     <p class="game-fallback-message">Bir sonraki ekran hazırlanıyor.</p>
   </main>
 

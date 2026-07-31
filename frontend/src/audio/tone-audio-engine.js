@@ -168,6 +168,11 @@ function createToneAudioEngine({
     function start() {
         const transport = Tone.getTransport();
 
+        if (transport.state === "started") {
+            transport.stop();
+            transport.cancel();
+        }
+
         transport.position = 0;
         transport.start("+0.05");
     }

@@ -1,7 +1,7 @@
 const gameConfig = Object.freeze({
   defaultBpm: 120,
   defaultStepCount: 8,
-  instrumentRoundSeconds: 5,
+  instrumentRoundSeconds: Number(process.env.INSTRUMENT_ROUND_SECONDS) || 30,
   playbackLoops: 5,
   playbackStartDelayMs: 2000,
   unanimousVoteMultiplier: 2,

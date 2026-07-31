@@ -310,6 +310,10 @@ const app = createApp({
   leaderboardRoutes
 });
 
+if (process.env.NODE_ENV === "production" || process.env.TRUST_PROXY === "true") {
+  app.set("trust proxy", 1);
+}
+
 const httpServer = createServer(app);
 
 const webSocketServer = new WebSocketServer({

@@ -9,11 +9,15 @@ function createGameStateBroadcaster({
     }) {
         const runtime = runtimeRegistry.getRuntime(sessionId);
 
-        if(!runtime || !runtime.players.has(playerId)) return {sent: false}
+        if(!runtime || !runtime.players.has(playerId)) {
+            return {sent: false}
+        }
 
         const socket = connectionRegistry.getSocketByPlayerId(playerId);
 
-        if(!socket || socket.readyState !== 1) return {sent: false};
+        if(!socket || socket.readyState !== 1) {
+            return {sent: false};
+        }
 
         const snapshot = createGameStateSnapshot(runtime, playerId)
 

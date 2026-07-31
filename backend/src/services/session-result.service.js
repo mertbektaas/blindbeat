@@ -39,7 +39,7 @@ function createSessionResultService({
         });
 
         const runtime = runtimeRegistry.getRuntime(sessionId);
-        phaseStateMachine.transition(runtime, "SESSION_COMPLETED");
+        phaseStateMachine.transition(runtime, "SESSION_RESULT");
         runtime.sessionResult = result;
 
         return {

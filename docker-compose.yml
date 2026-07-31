@@ -18,6 +18,7 @@ services:
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile.dev
     env_file:
       - .env
     environment:
@@ -32,14 +33,18 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    command: >
+      sh -c "npx prisma migrate deploy && node prisma/seed.js && npm run dev"
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile.dev
     env_file:
       - .env
     environment:
-      VITE_API_URL: http://localhost:${BACKEND_PORT}
+      VITE_API_URL: /api
+      VITE_WS_URL: /ws
     ports:
       - "${FRONTEND_PORT}:5173"
     volumes:

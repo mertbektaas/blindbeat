@@ -570,12 +570,14 @@ function createConnectionHandler({
                 return;
             }
                 try
-                {sessionGameFlow.handlePlayerReady({
+                {
+                sessionGameFlow.handlePlayerReady({
                     runtime,
                     playerId: identity.playerId,
                     instrumentRoundSeconds: runtime.instrumentRoundSeconds ?? gameConfig.instrumentRoundSeconds,
                     now: new Date()
-                })}
+                })
+            }
                 catch(error){
                     socket.send(JSON.stringify({
                         type: "error",

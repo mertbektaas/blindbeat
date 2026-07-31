@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchMatchLeaderboard } from "../api/leaderboard.api.js";
 
 const props = defineProps({
@@ -24,7 +24,9 @@ let revealTimer;
 let counterTimer;
 
 const palette = ["#c8f46b", "#c99dff", "#ff769b", "#6bb5f4", "#f5ba58"];
-const matchId = computed(() => props.gameState?.matchResult?.matchId || props.gameState?.currentMatchId);
+const matchId = computed(() => (
+  props.gameState?.matchResult?.matchId || props.gameState?.currentMatchId
+));
 const readyCount = computed(() => (
   (props.gameState?.players || []).filter((player) => player.matchResultReady).length
 ));
@@ -90,6 +92,7 @@ function continueMatch() {
 }
 
 watch(matchId, loadLeaderboard, { immediate: true });
+
 onBeforeUnmount(clearTimers);
 </script>
 
@@ -118,10 +121,10 @@ onBeforeUnmount(clearTimers);
       <section class="vote-exit"><span>Oylar kilitlendi.</span><strong>En iyisi bu demek?</strong></section>
     </section>
 
-    <section v-if="phase === 'leaderboard'" class="leaderboard-stage" aria-live="polite">
+    <section class="leaderboard-stage" aria-live="polite">
       <header class="leaderboard-heading"><h1>Kim aldı<br>sahneyi?</h1></header>
 
-      <p v-if="loading" class="leaderboard-message">Puanlar hesaplanıyor...</p>
+      <p v-if="phase === 'resolving' || loading" class="leaderboard-message">Puanlar hesaplanıyor...</p>
       <p v-else-if="loadError" class="leaderboard-message error">{{ loadError }}</p>
 
       <section v-else class="lift-board" aria-label="Güncel puan tablosu">
@@ -140,7 +143,7 @@ onBeforeUnmount(clearTimers);
 
       <footer class="continue-zone">
         <span>{{ readyCount }} / {{ playerCount }} hazır</span>
-        <button type="button" :disabled="myReady || Boolean(loadError)" @click="continueMatch">
+        <button type="button" :disabled="myReady" @click="continueMatch">
           {{ myReady ? "Diğerleri bekleniyor" : "Hazırım" }}
         </button>
       </footer>
