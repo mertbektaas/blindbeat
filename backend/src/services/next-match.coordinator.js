@@ -1,8 +1,11 @@
+const { GAME_PHASES } = require("../game/phase.game-state.machine");
+
 function createNextMatchCoordinator({
     matchRepository,
-    phaseStateMachine
+    phaseStateMachine,
+    instrumentRoundManager
 }) {
-    async function startNextMatch({ runtime, maxMatchCount }) {
+    async function startNextMatch({ runtime, maxMatchCount, instrumentRoundSeconds }) {
         if (runtime.matchNumber >= maxMatchCount) {
             return {
                 started: false,
@@ -35,7 +38,20 @@ function createNextMatchCoordinator({
             player.roundSkipped = false;
         }
 
-        phaseStateMachine.transition(runtime, "MATCH_STARTING");
+        // Sonraki match'lerde "MATCH_STARTING" hazır ekranını atla,
+        // direkt ilk instrument round'a geç. Oyuncular zaten aktif,
+        // tekrar ready sormak gereksiz.
+        if (runtime.matchNumber > 1) {
+            phaseStateMachine.transition(runtime, GAME_PHASES.MATCH_STARTING);
+            runtime.currentInstrumentId = runtime.sessionInstrumentIds[0];
+            phaseStateMachine.transition(runtime, GAME_PHASES.INSTRUMENT_ROUND);
+
+            const now = new Date();
+            runtime.roundStartedAt = now;
+            runtime.deadlineAt = new Date(now.getTime() + instrumentRoundSeconds * 1000);
+        } else {
+            phaseStateMachine.transition(runtime, GAME_PHASES.MATCH_STARTING);
+        }
 
         return {
             started: true,

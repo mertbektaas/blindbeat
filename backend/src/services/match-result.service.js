@@ -18,6 +18,7 @@ function createMatchResultService({
     runtimeRegistry,
     phaseStateMachine,
     unanimousVoteMultiplier = 2,
+    onFinalMatch = null,
     createVoteRepository: createVoteRepositoryFn = createVoteRepository,
     createSessionLeaderboardRepository: createSessionLeaderboardRepositoryFn = createSessionLeaderboardRepository
 }) {
@@ -82,14 +83,25 @@ function createMatchResultService({
         });
 
         const runtime = runtimeRegistry.getRuntime(result.sessionId);
-        phaseStateMachine.transition(runtime, "MATCH_RESULT");
-        runtime.matchResult = {
-            matchId: result.matchId,
-            winnerVariantIds: result.winnerVariantIds,
-            voteCounts: result.voteCounts,
-            tie: result.tie,
-            unanimous: result.unanimous
-        };
+
+        // Son match kontrolü: final match ise post-match LB'yi
+        // (MATCH_RESULT) atla ve direkt final sonuç ekranına veya
+        // OG round'a geç. Aksi halde normal post-match leaderboard
+        // gösterilmek üzere MATCH_RESULT phase'ine geç.
+        const isFinalMatch = runtime.matchNumber >= runtime.maxMatchCount;
+
+        if (isFinalMatch && onFinalMatch) {
+            await onFinalMatch(runtime);
+        } else {
+            phaseStateMachine.transition(runtime, "MATCH_RESULT");
+            runtime.matchResult = {
+                matchId: result.matchId,
+                winnerVariantIds: result.winnerVariantIds,
+                voteCounts: result.voteCounts,
+                tie: result.tie,
+                unanimous: result.unanimous
+            };
+        }
 
         return {
             success: true,

@@ -225,11 +225,19 @@ const leaderboardController = createLeaderboardController({
 const leaderboardRoutes = createLeaderboardRoutes({ leaderboardController });
 const { createVoteRepository } = require("./repositories/vote.repository");
 const voteRepository = createVoteRepository(prisma);
+
+// Final match tamamlandığında çağrılacak callback (late-binding).
+// OG round denenecek, başlamazsa direkt final session leaderboard'a
+// geçilecek. match-result.service.voteService'den önce oluşturulduğu
+// için holder üzerinden enjekte ediliyor.
+const onFinalMatchHolder = { current: null };
+
 const matchResultService = createMatchResultService({
   prisma,
   runtimeRegistry,
   phaseStateMachine,
-  unanimousVoteMultiplier: gameConfig.unanimousVoteMultiplier
+  unanimousVoteMultiplier: gameConfig.unanimousVoteMultiplier,
+  onFinalMatch: (runtime) => onFinalMatchHolder.current?.(runtime)
 });
 const voteService = createVoteService({
   voteRepository,
@@ -288,7 +296,8 @@ const ogRoundCoordinator = createOgRoundCoordinator({
 
 const nextMatchCoordinator = createNextMatchCoordinator({
   matchRepository,
-  phaseStateMachine
+  phaseStateMachine,
+  instrumentRoundManager
 });
 
 const sessionResultService = createSessionResultService({
@@ -297,6 +306,25 @@ const sessionResultService = createSessionResultService({
   phaseStateMachine,
   sessionLeaderboardRepository
 });
+
+// Final match tamamlandığında: beraberlik + arşivde yeterli pattern
+// varsa OG round (tiebreak) başlat, aksi halde direkt final session
+// leaderboard animasyonuna geç. Bu callback match-result.service'e
+// late-binding holder üzerinden bağlandı.
+onFinalMatchHolder.current = async (runtime) => {
+  const ogResult = await ogRoundCoordinator.startRound({
+    sessionId: runtime.sessionId,
+    maxMatchCount: runtime.maxMatchCount,
+    instrumentIds: runtime.sessionInstrumentIds,
+    playerIds: [...runtime.players.keys()]
+  });
+
+  if (!ogResult.started) {
+    await sessionResultService.completeSession({
+      sessionId: runtime.sessionId
+    });
+  }
+};
 
 // #endregion
 

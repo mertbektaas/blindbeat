@@ -520,25 +520,14 @@ function createConnectionHandler({
                     });
 
                     if (result.allReady) {
-                        if (runtime.matchNumber < runtime.maxMatchCount) {
-                            await nextMatchCoordinator.startNextMatch({
-                                runtime,
-                                maxMatchCount: runtime.maxMatchCount
-                            });
-                        } else {
-                            const ogResult = await ogRoundCoordinator.startRound({
-                                sessionId: runtime.sessionId,
-                                maxMatchCount: runtime.maxMatchCount,
-                                instrumentIds: runtime.sessionInstrumentIds,
-                                playerIds: [...runtime.players.keys()]
-                            });
-
-                            if (!ogResult.started) {
-                                await sessionResultService.completeSession({
-                                    sessionId: runtime.sessionId
-                                });
-                            }
-                        }
+                        // Final match'lerde MATCH_RESULT phase'ine hiç
+                        // girilmediği için buraya sadece ara match'ler için
+                        // ulaşılır. Direkt sonraki instrument round'a geç.
+                        await nextMatchCoordinator.startNextMatch({
+                            runtime,
+                            maxMatchCount: runtime.maxMatchCount,
+                            instrumentRoundSeconds: gameConfig.instrumentRoundSeconds
+                        });
                     }
 
                     await gameStateBroadcaster.broadcastGameState(room.activeSessionId);
