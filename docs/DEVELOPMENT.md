@@ -288,12 +288,12 @@ Fazlar merkezi bir geçiş servisi ile yönetilir; harici kütüphane yok.
 **Geçerli geçişler:**
 
 ```
-LOBBY ───────────────→ INSTRUMENT_ROUND
-INSTRUMENT_ROUND ───→ PLAYBACK
-PLAYBACK ─────────────→ VOTING
-VOTING ───────────────→ LEADERBOARD
-LEADERBOARD ──→ INSTRUMENT_ROUND | SESSION_RESULT | OG_ROUND
-OG_ROUND ─────→ OG_ROUND | SESSION_RESULT
+LOBBY ─────────────────→ INSTRUMENT_ROUND
+INSTRUMENT_ROUND ──────→ PLAYBACK
+PLAYBACK ──────────────→ VOTING
+VOTING ────────────────→ LEADERBOARD
+LEADERBOARD ───────────→ INSTRUMENT_ROUND | SESSION_RESULT | OG_ROUND
+OG_ROUND ──────────────→ OG_ROUND | SESSION_RESULT
 ```
 
 Bir WebSocket event'i yalnızca mevcut faz izin veriyorsa işlenir. Örneğin VOTING fazında pattern lock isteği reddedilir.
