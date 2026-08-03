@@ -1,11 +1,11 @@
 # Blind Beat
 
-Çok oyunculu, kör oylamalı bir müzik oyunu. Oyuncular diğer katkıları duymadan müzik pattern'leri oluşturur; sistem bu pattern'leri birleştirip üç şarkı varyantı üretir ve oyuncular bunları anonim olarak oynayı puan kazanır.
+Çok oyunculu, oylamalı bir müzik oyunudur. Oyuncular diğer pattern'leri görmeden müzik pattern'leri oluşturur; sistem bu pattern'leri birleştirip üç şarkı varyantı üretir ve oyuncular bunları anonim olarak oylayıp puan kazanır.
 
 ## Nasıl çalışır
 
 - Lobiler 4–10 oyuncu arasında kurulur.
-- Her match'te seçilen enstrümanlar için 30 saniyelik instrument round'lar oynanır; her oyuncu 8-step bir pattern üretir.
+- Her match'te seçilen enstrümanlar için instrument round'lar oynanır; her oyuncu bir pattern üretir.
 - Sistem pattern'lerden üç şarkı varyantı üretir (fairness + ağırlıklı seçim).
 - Şarkılar katkı sahipleri belli edilmeden dinletilir ve kör oylama yapılır.
 - Skorlar leaderboard'a yansır; final beraberliklerinde yedek pattern'lerle OG Round oynanır.
@@ -32,7 +32,3 @@ docker compose up -d --build
 - **[Geliştirici Dokümanı](docs/DEVELOPMENT.md)** — mimari, veri modeli, oyun durum makinesi, WebSocket protokolü ve genişletme noktaları.
 - **[Oyun Dokümanı](docs/gamerules.md)** — oyun kuralları.
 - **[Teknik Tasarım](docs/technical.md)** — teknik mimari kararları.
-
-## Lisans
-
-Bu proje staj uygulaması (internship) kapsamında geliştirilmektedir.
