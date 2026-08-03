@@ -454,9 +454,8 @@ Testler seed'e bağımlı değildir; her test kendi izole verisini kurar.
 - Kalıcı hesap / auth ve skip yoktur.
 - Sunucu yeniden başlatılırsa aktif session geri yüklenmez.
 - Sunucu tarafında audio render yoktur.
-- Gerçek gitar fiziği / akor / vibrato / bend yoktur (yalnızca tel kesişmeleri).
-- Host rolü yoktur; tüm oyuncular eşit yetkidedir.
-- Redis / Socket.io / harici state yok; 10 kişilik ölçe için bellek + PostgreSQL yeterlidir.
+- Gerçek gitar fiziği / akor / vibrato / bend yoktur
+- Redis / Socket.io / harici state yok
 - Maksimum tekrarlı OG Round sayısı henüz sabit değildir (MVP'de "beraberlik bitene kadar" şeklindedir).
 - CI/CD production deployment pipeline'ı MVP dışındadır.
 
@@ -472,7 +471,7 @@ Testler seed'e bağımlı değildir; her test kendi izole verisini kurar.
 - `src/stores/` — `playback.store`, `voting.store` (Pinia)
 - `src/components/` — Landing, Lobby, InstrumentRoundEditor, PlaybackScreen, PlaybackVotingPage, VotingScreen, LeaderboardUpdatePage, SessionResultScreen
 
-### Backend öne çıkanlar
+### Backend 
 
 - `src/server.js` — HTTP + WS başlatma, graceful shutdown
 - `src/game/phase.game-state.machine.js` — faz geçişleri
@@ -484,4 +483,4 @@ Testler seed'e bağımlı değildir; her test kendi izole verisini kurar.
 - `src/realtime/` — connection handler, room.registry, game-state.broadcaster, heartbeat, origin.verifier, request-id.registry
 - `repositories/` — her agrega için erişim katmanı (pattern, song-variant, vote, session, leaderboard vb.)
 
-> Belirli bir dosya veya akış hakkında daha derin ayrıntı ararken: dosya düzeyindeki kararların gerekçeleri `game.md` (tasarım günlüğü) ve her modülün içindeki yorumlarda bulunur.
+
