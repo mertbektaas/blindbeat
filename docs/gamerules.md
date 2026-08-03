@@ -11,11 +11,11 @@ Kör oylamalı çok oyunculu müzik oyunu: oyuncular birbirinin katkılarını g
 
 ## Maç Akışı
 
-1. Seçilen her enstrüman için **instrument round** oynanır (30 sn).
-2. Her oyuncu 8-step bir **pattern** üretir; diğer oyuncuların pattern'lerini görmez/duymaz.
+1. Seçilen her enstrüman için **instrument round** oynanır.
+2. Her oyuncu bir **pattern** üretir; diğer oyuncuların pattern'lerini görmez/duymaz.
 3. Pattern'ler ilgili enstrümanın havuzuna kaydedilir.
 4. Her enstrüman havuzundan 3 pattern seçilir ve 3 **song variant** oluşturulur.
-5. Üç şarkı rastgele sırayla, 5 loop dinletilir (katkı sahipleri gizli).
+5. Üç şarkı rastgele sırayla, 5 loop dinletilir.
 6. Oyuncular tek bir şarkıya oy verir; sonuç açıklanır.
 7. Skorlar leaderboard'a yansır; kalan match varsa sıradakine geçilir.
 
